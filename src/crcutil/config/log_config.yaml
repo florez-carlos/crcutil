@@ -1,0 +1,63 @@
+---
+version: 1
+disable_existing_loggers: False
+formatters:
+    console_color:
+        (): colorlog.ColoredFormatter
+        format: '%(log_color)s%(message)s%(reset)s'
+        log_colors:
+            DEBUG: cyan
+            WARNING: yellow
+            ERROR: red
+            CRITICAL: red,bg_white
+        datefmt: '%Y-%m-%dT%H:%M:%SZ'
+            
+    simple_color:
+        (): colorlog.ColoredFormatter
+        format: '%(log_color)s%(asctime)s %(levelname)-8s%(reset)s  %(message)s'
+        log_colors:
+            DEBUG: cyan
+            WARNING: yellow
+            ERROR: red
+            CRITICAL: red,bg_white
+        datefmt: '%Y-%m-%dT%H:%M:%SZ'
+        
+    detailed_color:
+        (): colorlog.ColoredFormatter
+        format: '%(log_color)s%(asctime)s | %(process)d | %(levelname)s | %(filename)s | %(lineno)d | %(funcName)s | %(message)s%(reset)s'
+        log_colors:
+            DEBUG: cyan
+            WARNING: yellow
+            ERROR: red
+            CRITICAL: red,bg_white
+        datefmt: '%Y-%m-%dT%H:%M:%SZ'
+
+    simple:
+        format: '%(asctime)s %(levelname)-8s  %(message)s'
+        datefmt: '%Y-%m-%dT%H:%M:%SZ'
+            
+    detailed:
+        format: '%(asctime)s | %(process)d | %(levelname)s | %(filename)s | %(lineno)d | %(funcName)s | %(message)s'
+        datefmt: '%Y-%m-%dT%H:%M:%SZ'
+        
+handlers:
+    console_color:
+        class: logging.StreamHandler
+        level: INFO
+        formatter: console_color
+        stream: ext://sys.stdout
+    
+    regular_file_handler:
+        filename: 'fallback_regular.log'
+        class: logging.FileHandler
+        level: DEBUG
+        formatter: detailed
+        encoding: utf8
+
+loggers:
+    console:
+        level: INFO
+        handlers: [console_color]
+    regular:
+        level: DEBUG
+        handlers: [console_color, regular_file_handler]

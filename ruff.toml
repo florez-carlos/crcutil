@@ -1,0 +1,40 @@
+line-length = 79
+indent-width = 4
+
+[lint]
+select = ["ALL"]
+ignore = ["D",
+"C901",
+"T201",
+"PLR0912",
+"PLR0913",
+"PLR0915",
+"SLF001",
+"FBT",
+"W191",
+"E111",
+"E114",
+"E117",
+"D206",
+"D300",
+"Q000",
+"Q001",
+"Q002",
+"Q003",
+"COM812",
+"COM819",
+"ISC001",
+"ISC002",
+"TRY003",
+"TRY004",
+"TRY300",
+"RET505",
+"RET506",
+]
+# select = ["E4", "E7", "E9", "F", "B", "Q"]
+# extend-select = ["E501"]
+
+[format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "auto"

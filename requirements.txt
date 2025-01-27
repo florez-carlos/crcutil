@@ -1,0 +1,4 @@
+pyyaml==6.0.1
+toml==0.10.2
+pywin32==306;sys_platform == 'win32'
+colorlog==6.4.0
