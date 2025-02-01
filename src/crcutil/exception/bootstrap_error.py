@@ -1,0 +1,2 @@
+class BootstrapError(Exception):
+    pass
