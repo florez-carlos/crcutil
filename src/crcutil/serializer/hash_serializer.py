@@ -1,4 +1,3 @@
-from crcutil.dto.crc_dto import CrcDTO
 from crcutil.dto.hash_dto import HashDTO
 from crcutil.util.static import Static
 
@@ -10,5 +9,4 @@ class HashSerializer(Static):
 
     @staticmethod
     def to_dto(hash_dict: dict) -> list[HashDTO]:
-        return [HashDTO(file=file,crc=crc) for file, crc in hash_dict.items()]
-        
+        return [HashDTO(file=file, crc=crc) for file, crc in hash_dict.items()]
