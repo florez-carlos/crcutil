@@ -1,49 +1,62 @@
-from pathlib import Path
 import zlib
+from pathlib import Path
 
-from crcutil.dto.crc_dto import CrcDTO
+from crcutil.core.prompt import Prompt
 from crcutil.dto.hash_dto import HashDTO
 from crcutil.util.crcutil_logger import CrcutilLogger
 from crcutil.util.file_importer import FileImporter
 
-class crc:
 
-    def __init__(self, location: Path, hash_dto: HashDTO) -> None:
+class crc:
+    def __init__(self, location: Path, hash_file_location: Path) -> None:
         self.location = location
-        self.hash_dto = hash_dto
+        self.hash_file_location = hash_file_location
 
     def do(self):
+        match self.get_hash_status(self.location):
+            case -1:
+                self.__create_hash()
+            case 0:
+                self.__continue_hash()
+            case 1:
+                self.__create_hash(is_hash_overwrite=True)
 
-        self.hash_dto = HashDTO()
-        parent_location = Path("/home/carlos/workspace/test")
+    def __create_hash(self, is_hash_overwrite=False) -> None:
+        if is_hash_overwrite:
+            Prompt.overwrite_hash_confirm()
+
+        all_locations = self.seek(self.location)
+        self.__write_hash(self.hash_file_location, all_locations)
+
+    def __continue_hash(self) -> None:
         offset_position = ""
-        offset_index = - 1
-        original_crcs = self.hash_dto.crcs
-        for index, crc_dto in enumerate(original_crcs):
-            if not crc_dto.crc:
-                offset_position = crc_dto.relative_path
-                offset_index = index
+        # offset_index = - 1
+
+        original_hashes = FileImporter.get_hash(self.hash_file_location)
+
+        for index, hash_dto in enumerate(original_hashes):
+            if not hash_dto.crc:
+                offset_position = hash_dto.file
+                # offset_index = index
                 break
-        if offset_index:
-            offset_crcs = self.hash_dto.crcs[:offset_index]
-            self.hash_dto = HashDTO(offset_crcs)
 
+        # if offset_index:
+        #     offset_hashes = original_hashes[:offset_index]
 
-        filtered_locations = self.seek(parent_location, offset_position)
-        print(f"filtered_locations: {filtered_locations}")
+        filtered_locations = self.seek(self.location, offset_position)
+        self.__write_hash(self.location, filtered_locations)
 
-        for filtered_location in filtered_locations:
+    def __write_hash(
+        self, parent_location: Path, str_relative_locations: list[str]
+    ) -> None:
+        for str_relative_location in str_relative_locations:
+            relative_location = Path(str_relative_location)
+            abs_location = (parent_location / relative_location).resolve()
 
-        for filtered_location in filtered_locations:
-            crc = self.__get_crc_hash(
-                (parent_location / Path(filtered_location)
-            ).resolve(), parent_location)
-            self.hash_dto.crcs.append(
-                CrcDTO(relative_path=filtered_location, crc=crc)
-            )
-            FileImporter.write_hash(Path("test.json"), self.hash_dto)
-
-        pass
+            crc = self.__get_crc_hash(abs_location, parent_location)
+            hashes = FileImporter.get_hash(self.hash_file_location)
+            hashes.append(HashDTO(file=str_relative_location, crc=crc))
+            FileImporter.save_hash(self.hash_file_location, hashes)
 
     def __walk(self, path: Path) -> list[Path]:
         """
@@ -67,10 +80,10 @@ class crc:
 
         return items
 
-
-    def seek(self, initial_position: Path, offset_position: str = "") -> list[str]:
-
-        raw =  self.__walk(initial_position)
+    def seek(
+        self, initial_position: Path, offset_position: str = ""
+    ) -> list[str]:
+        raw = self.__walk(initial_position)
         normalized = [x.relative_to(initial_position) for x in raw]
         sorted_normalized = sorted(normalized, key=lambda path: path.name)
         sorted_normalized = [str(x) for x in sorted_normalized]
@@ -90,6 +103,30 @@ class crc:
                 if is_collect:
                     remaining.append(item)
             return remaining
+
+    def get_hash_status(self, hash_location: Path) -> int:
+        """
+        Gets the current status of a Hash file:
+        Possible values:
+        -1) File does not exist
+         0) File exists and is incomplete/pending
+         1) File exists and is finished
+
+        Returns:
+            int: The status of the hash file
+        """
+        status = -1
+        if hash_location.exists():
+            hash_dto = FileImporter.get_hash(hash_location)
+
+            for dto in hash_dto:
+                if dto.crc is None:
+                    status = 0
+                    return status
+
+            status = 1
+
+        return status
 
     def __is_locations_eq(
         self, display_name: str, location_a: Path, location_b: Path

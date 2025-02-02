@@ -123,3 +123,8 @@ class Prompt(Static):
         CrcutilLogger.get_logger().debug(debug)
 
         return UserInstructionsDTO(request=request, location=pathlib.Path())
+
+    # TODO:
+    @staticmethod
+    def overwrite_hash_confirm() -> None:
+        pass
