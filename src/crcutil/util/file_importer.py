@@ -95,7 +95,7 @@ class FileImporter(Static):
         )
 
     @staticmethod
-    def write_hash(crc_path: Path, hash_dto: HashDTO) -> None:
+    def save_hash(crc_path: Path, hash_dto: list[HashDTO]) -> None:
         with crc_path.open(
             "w", errors="strict", encoding=FileImporter.encoding
         ) as file:
@@ -103,7 +103,7 @@ class FileImporter(Static):
             json.dump(hash_data, file, indent=4)
 
     @staticmethod
-    def load_hash(crc_path: Path) -> HashDTO:
+    def get_hash(crc_path: Path) -> list[HashDTO]:
         with crc_path.open(
             "r", errors="strict", encoding=FileImporter.encoding
         ) as file:

@@ -5,16 +5,10 @@ from crcutil.util.static import Static
 
 class HashSerializer(Static):
     @staticmethod
-    def to_json(hash_dto: HashDTO) -> dict:
-        return {
-            crc_dto.relative_path: crc_dto.crc for crc_dto in hash_dto.crcs
-        }
+    def to_json(hash_dto: list[HashDTO]) -> dict:
+        return {dto.file: dto.crc for dto in hash_dto}
 
     @staticmethod
-    def to_dto(hash_dict: dict) -> HashDTO:
-        return HashDTO(
-            crcs=[
-                CrcDTO(relative_path=path, crc=crc)
-                for path, crc in hash_dict.items()
-            ]
-        )
+    def to_dto(hash_dict: dict) -> list[HashDTO]:
+        return [HashDTO(file=file,crc=crc) for file, crc in hash_dict.items()]
+        
