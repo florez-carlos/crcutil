@@ -3,9 +3,9 @@ from pathlib import Path
 
 from crcutil.core.prompt import Prompt
 from crcutil.dto.hash_dto import HashDTO
+from crcutil.enums.user_request import UserRequest
 from crcutil.util.crcutil_logger import CrcutilLogger
 from crcutil.util.file_importer import FileImporter
-from crcutil.enums.user_request import UserRequest
 
 
 class crc:
@@ -13,7 +13,7 @@ class crc:
         self,
         location: Path,
         hash_file_location: Path,
-        user_request: UserRequest
+        user_request: UserRequest,
     ) -> None:
         self.location = location
         self.hash_file_location = hash_file_location
@@ -29,18 +29,16 @@ class crc:
                 case 1:
                     self.__create_hash(is_hash_overwrite=True)
         elif self.user_request is UserRequest.DIFF:
-            #TODO: 
+            # TODO:
             pass
         else:
-            description = (
-                f"Unsupported request: {self.user_request!s}"
-            )
+            description = f"Unsupported request: {self.user_request!s}"
             raise ValueError(description)
 
     def __create_hash(self, is_hash_overwrite=False) -> None:
         if is_hash_overwrite:
             Prompt.overwrite_hash_confirm()
-            
+
         self.hash_file_location.write_text("{}")
 
         all_locations = self.seek(self.location)
