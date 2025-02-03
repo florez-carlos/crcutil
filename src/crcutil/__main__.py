@@ -5,7 +5,6 @@ from jsonschema.exceptions import ValidationError
 
 from crcutil.core.crc import crc
 from crcutil.core.prompt import Prompt
-from crcutil.dto.hash_dto import HashDTO
 from crcutil.exception.bootstrap_error import BootstrapError
 from crcutil.exception.unexpected_argument_error import UnexpectedArgumentError
 from crcutil.exception.user_error import UserError
@@ -43,7 +42,7 @@ def main() -> None:
         crc_obj = crc(
             location=location,
             hash_file_location=hash_file_location,
-            user_request=user_request
+            user_request=user_request,
         )
         crc_obj.do()
 
