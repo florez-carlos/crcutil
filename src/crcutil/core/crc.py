@@ -56,13 +56,15 @@ class Crc:
 
         original_hashes = FileImporter.get_hash(self.hash_file_location)
 
-        for _, hash_dto in enumerate(original_hashes):
+        for hash_dto in original_hashes:
             if not hash_dto.crc:
                 offset_position = hash_dto.file
                 break
 
         filtered_locations = self.seek(self.location, offset_position)
-        self.__write_hash(self.location, filtered_locations)
+        self.__write_hash(
+            self.location, filtered_locations, len(original_hashes)
+        )
 
     def __write_locations(self, str_relative_locations: list[str]) -> None:
         hashes = []
@@ -73,7 +75,10 @@ class Crc:
         FileImporter.save_hash(self.hash_file_location, hashes)
 
     def __write_hash(
-        self, parent_location: Path, str_relative_locations: list[str]
+        self,
+        parent_location: Path,
+        str_relative_locations: list[str],
+        total_count: int = 0,
     ) -> None:
         monitor = KeyboardMonitor()
         try:
@@ -86,10 +91,20 @@ class Crc:
 
             print("\n*Press p to pause/resume")
             print("*Press q to quit")
-            with alive_bar(len(str_relative_locations), dual_line=True) as bar:
+            length = (
+                len(str_relative_locations) if not total_count else total_count
+            )
+            with alive_bar(length, dual_line=True) as bar:
+                if total_count:
+                    offset_count = total_count - len(str_relative_locations)
+                    for _ in range(offset_count):
+                        bar()
+
                 for str_relative_location in str_relative_locations:
                     while monitor.is_paused:
                         bar.text = f"{pause_icon} PAUSED"
+                    while monitor.is_quit:
+                        sys.exit(0)
 
                     bar.text = f"{play_icon} {str_relative_location}"
 
