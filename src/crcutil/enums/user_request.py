@@ -4,8 +4,8 @@ from enum import Enum
 
 
 class UserRequest(Enum):
-    COLLECT = "collect"
-    INJECT = "inject"
+    HASH = "hash"
+    DIFF = "diff"
 
     @staticmethod
     def get_user_request_from_str(
