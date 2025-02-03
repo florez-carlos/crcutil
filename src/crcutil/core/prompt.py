@@ -70,8 +70,8 @@ class Prompt(Static):
             raise UnexpectedArgumentError(unknown)
 
         request = args.request
-        save_manifest = args.save_manifest
         is_version = args.version
+        location = args.location[0]
 
         if is_version:
             crcutil_version = ""
@@ -89,42 +89,31 @@ class Prompt(Static):
         if not request:
             description = "Expected a request but none supplied, see -h"
             raise UserError(description)
-        if not save_manifest:
-            description = "Expected a save_manifest but none supplied, see -h"
-            raise UserError(description)
 
         request = UserRequest.get_user_request_from_str(request)
-        save_manifest = save_manifest[0]
-
-        if request is UserRequest.INJECT:
-            warning = (
-                "⚠️"
-                if sys.stdout.encoding.lower().startswith("utf")
-                else "[WARNING]"
-            )
-            confirmation = (
-                input(
-                    f"{warning} Injection will overwrite hot saves with cold, "
-                    "continue? (y/n): "
-                )
-                .strip()
-                .lower()
-            )
-            if confirmation != "y":
-                debug = "Injection cancelled by user"
-                CrcutilLogger.get_logger().debug(debug)
-                sys.exit(0)
 
         debug = (
             "Received a User Request:\n"
             f"Request: {request.value if request else None}\n"
-            f"Save Manifest: {save_manifest!s}\n"
+            f"Location: {location!s}\n"
         )
         CrcutilLogger.get_logger().debug(debug)
 
-        return UserInstructionsDTO(request=request, location=pathlib.Path())
+        return UserInstructionsDTO(request=request, location=location)
 
-    # TODO:
     @staticmethod
     def overwrite_hash_confirm() -> None:
-        pass
+        warning = (
+            "⚠️"
+            if sys.stdout.encoding.lower().startswith("utf")
+            else "[WARNING]"
+        )
+        confirmation = (
+            input(f"{warning} Hash file already exists, " "overwrite? (y/n): ")
+            .strip()
+            .lower()
+        )
+        if confirmation != "y":
+            debug = "Overwrite of hash file cancelled by user"
+            CrcutilLogger.get_logger().debug(debug)
+            sys.exit(0)
