@@ -1,13 +1,17 @@
 from __future__ import annotations
 
+import sys
 import zlib
 from pathlib import Path
+
+from alive_progress import alive_bar
 
 from crcutil.core.prompt import Prompt
 from crcutil.dto.hash_dto import HashDTO
 from crcutil.enums.user_request import UserRequest
 from crcutil.util.crcutil_logger import CrcutilLogger
 from crcutil.util.file_importer import FileImporter
+from crcutil.util.keyboard_monitor import KeyboardMonitor
 
 
 class Crc:
@@ -44,37 +48,65 @@ class Crc:
         self.hash_file_location.write_text("{}")
 
         all_locations = self.seek(self.location)
+        self.__write_locations(all_locations)
         self.__write_hash(self.location, all_locations)
 
     def __continue_hash(self) -> None:
         offset_position = ""
-        # offset_index = - 1
 
         original_hashes = FileImporter.get_hash(self.hash_file_location)
 
-        for index, hash_dto in enumerate(original_hashes):
+        for _, hash_dto in enumerate(original_hashes):
             if not hash_dto.crc:
                 offset_position = hash_dto.file
-                # offset_index = index
                 break
-
-        # if offset_index:
-        #     offset_hashes = original_hashes[:offset_index]
 
         filtered_locations = self.seek(self.location, offset_position)
         self.__write_hash(self.location, filtered_locations)
 
+    def __write_locations(self, str_relative_locations: list[str]) -> None:
+        hashes = []
+
+        for str_relative_location in str_relative_locations:
+            hashes.append(HashDTO(file=str_relative_location, crc=0))
+
+        FileImporter.save_hash(self.hash_file_location, hashes)
+
     def __write_hash(
         self, parent_location: Path, str_relative_locations: list[str]
     ) -> None:
-        for str_relative_location in str_relative_locations:
-            relative_location = Path(str_relative_location)
-            abs_location = (parent_location / relative_location).resolve()
+        monitor = KeyboardMonitor()
+        try:
+            monitor.start()
+            play_icon, pause_icon = (
+                ("▶", "⏸")
+                if sys.stdout.encoding.lower().startswith("utf")
+                else (">", "||")
+            )
 
-            crc = self.__get_crc_hash(abs_location, parent_location)
-            hashes = FileImporter.get_hash(self.hash_file_location)
-            hashes.append(HashDTO(file=str_relative_location, crc=crc))
-            FileImporter.save_hash(self.hash_file_location, hashes)
+            print("\n*Press p to pause/resume")
+            print("*Press q to quit")
+            with alive_bar(len(str_relative_locations), dual_line=True) as bar:
+                for str_relative_location in str_relative_locations:
+                    while monitor.is_paused:
+                        bar.text = f"{pause_icon} PAUSED"
+
+                    bar.text = f"{play_icon} {str_relative_location}"
+
+                    relative_location = Path(str_relative_location)
+                    abs_location = (
+                        parent_location / relative_location
+                    ).resolve()
+
+                    crc = self.__get_crc_hash(abs_location, parent_location)
+                    hashes = FileImporter.get_hash(self.hash_file_location)
+                    hashes.append(HashDTO(file=str_relative_location, crc=crc))
+
+                    FileImporter.save_hash(self.hash_file_location, hashes)
+
+                    bar()
+        except KeyboardInterrupt:
+            monitor.stop()
 
     def __walk(self, path: Path) -> list[Path]:
         """
@@ -116,8 +148,9 @@ class Crc:
             remaining = []
             for item in sorted_normalized:
                 if item == offset_position:
-                    is_collect = not is_collect
-                    continue
+                    # Only flip once
+                    if not is_collect:
+                        is_collect = not is_collect
                 if is_collect:
                     remaining.append(item)
             return remaining
@@ -138,9 +171,8 @@ class Crc:
             hash_dto = FileImporter.get_hash(self.hash_file_location)
 
             for dto in hash_dto:
-                if dto.crc is None:
-                    status = 0
-                    return status
+                if not dto.crc:
+                    return 0
 
             status = 1
 
