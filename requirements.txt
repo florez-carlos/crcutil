@@ -4,3 +4,4 @@ toml==0.10.2
 pywin32==306;sys_platform == 'win32'
 jsonschema==4.23.0
 colorlog==6.4.0
+pynput==1.7.7
