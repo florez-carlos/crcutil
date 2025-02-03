@@ -1,13 +1,12 @@
 from __future__ import annotations
 
-import sys
-
 from pynput import keyboard
 
 
 class KeyboardMonitor:
     def __init__(self) -> None:
         self.is_paused = False
+        self.is_quit = False
         self.listener = None
 
     def start(self) -> None:
@@ -17,7 +16,7 @@ class KeyboardMonitor:
     def stop(self) -> None:
         if self.listener:
             self.listener.stop()
-        sys.exit(0)
+        self.is_quit = True
 
     def on_press(self, key: keyboard.Key | keyboard.KeyCode | None) -> None:
         try:
