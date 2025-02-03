@@ -135,11 +135,12 @@ class FileImporter(Static):
 
             crcutil_dir = Path(home_folder) / "crcutil"
             log_dir = crcutil_dir / "log"
+            hash_file = crcutil_dir / "hash.json"
 
             crcutil_dir.mkdir(exist_ok=True)
             log_dir.mkdir(exist_ok=True)
 
-            return BootstrapPathsDTO(log_dir=log_dir)
+            return BootstrapPathsDTO(log_dir=log_dir, hash_file=hash_file)
 
         except Exception as e:
             if platform.system == "Windows":

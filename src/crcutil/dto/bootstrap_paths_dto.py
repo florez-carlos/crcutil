@@ -6,3 +6,4 @@ from pathlib import Path
 @dataclass(frozen=True)
 class BootstrapPathsDTO:
     log_dir: Path
+    hash_file: Path

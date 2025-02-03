@@ -5,28 +5,46 @@ from crcutil.core.prompt import Prompt
 from crcutil.dto.hash_dto import HashDTO
 from crcutil.util.crcutil_logger import CrcutilLogger
 from crcutil.util.file_importer import FileImporter
+from crcutil.enums.user_request import UserRequest
 
 
 class crc:
-    def __init__(self, location: Path, hash_file_location: Path) -> None:
+    def __init__(
+        self,
+        location: Path,
+        hash_file_location: Path,
+        user_request: UserRequest
+    ) -> None:
         self.location = location
         self.hash_file_location = hash_file_location
+        self.user_request = user_request
 
     def do(self):
-        match self.get_hash_status(self.location):
-            case -1:
-                self.__create_hash()
-            case 0:
-                self.__continue_hash()
-            case 1:
-                self.__create_hash(is_hash_overwrite=True)
+        if self.user_request is UserRequest.HASH:
+            match self.__get_hash_status():
+                case -1:
+                    self.__create_hash()
+                case 0:
+                    self.__continue_hash()
+                case 1:
+                    self.__create_hash(is_hash_overwrite=True)
+        elif self.user_request is UserRequest.DIFF:
+            #TODO: 
+            pass
+        else:
+            description = (
+                f"Unsupported request: {self.user_request!s}"
+            )
+            raise ValueError(description)
 
     def __create_hash(self, is_hash_overwrite=False) -> None:
         if is_hash_overwrite:
             Prompt.overwrite_hash_confirm()
+            
+        self.hash_file_location.write_text("{}")
 
         all_locations = self.seek(self.location)
-        self.__write_hash(self.hash_file_location, all_locations)
+        self.__write_hash(self.location, all_locations)
 
     def __continue_hash(self) -> None:
         offset_position = ""
@@ -104,7 +122,7 @@ class crc:
                     remaining.append(item)
             return remaining
 
-    def get_hash_status(self, hash_location: Path) -> int:
+    def __get_hash_status(self) -> int:
         """
         Gets the current status of a Hash file:
         Possible values:
@@ -116,8 +134,8 @@ class crc:
             int: The status of the hash file
         """
         status = -1
-        if hash_location.exists():
-            hash_dto = FileImporter.get_hash(hash_location)
+        if self.hash_file_location.exists():
+            hash_dto = FileImporter.get_hash(self.hash_file_location)
 
             for dto in hash_dto:
                 if dto.crc is None:

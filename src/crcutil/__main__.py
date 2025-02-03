@@ -21,15 +21,14 @@ def __walk(location: Path):
 
 def main() -> None:
     try:
-        crc(Path(), HashDTO()).do()
-        return
         bootstrap_paths_dto = FileImporter.bootstrap()
 
         log_dir = bootstrap_paths_dto.log_dir
+        hash_file_location = bootstrap_paths_dto.hash_file
 
         log_config_file_path = (
             FileImporter.get_project_root()
-            / "gamesutil"
+            / "crcutil"
             / "config"
             / "log_config.yaml"
         )
@@ -40,6 +39,13 @@ def main() -> None:
 
         instructions_dto = Prompt.get_user_instructions_dto()
         location = instructions_dto.location
+        user_request = instructions_dto.request
+        crc_obj = crc(
+            location=location,
+            hash_file_location=hash_file_location,
+            user_request=user_request
+        )
+        crc_obj.do()
 
         sys.exit(0)
 
