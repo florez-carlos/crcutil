@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import zlib
 from pathlib import Path
 
@@ -8,7 +10,7 @@ from crcutil.util.crcutil_logger import CrcutilLogger
 from crcutil.util.file_importer import FileImporter
 
 
-class crc:
+class Crc:
     def __init__(
         self,
         location: Path,
@@ -19,7 +21,7 @@ class crc:
         self.hash_file_location = hash_file_location
         self.user_request = user_request
 
-    def do(self):
+    def do(self) -> None:
         if self.user_request is UserRequest.HASH:
             match self.__get_hash_status():
                 case -1:
@@ -35,7 +37,7 @@ class crc:
             description = f"Unsupported request: {self.user_request!s}"
             raise ValueError(description)
 
-    def __create_hash(self, is_hash_overwrite=False) -> None:
+    def __create_hash(self, is_hash_overwrite: bool = False) -> None:
         if is_hash_overwrite:
             Prompt.overwrite_hash_confirm()
 

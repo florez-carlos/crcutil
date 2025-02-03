@@ -1,21 +1,14 @@
 import sys
-from pathlib import Path
 
 from jsonschema.exceptions import ValidationError
 
-from crcutil.core.crc import crc
+from crcutil.core.crc import Crc
 from crcutil.core.prompt import Prompt
 from crcutil.exception.bootstrap_error import BootstrapError
 from crcutil.exception.unexpected_argument_error import UnexpectedArgumentError
 from crcutil.exception.user_error import UserError
 from crcutil.util.crcutil_logger import CrcutilLogger
 from crcutil.util.file_importer import FileImporter
-
-
-def __walk(location: Path):
-    for item in location.iterdir():
-        if item.is_dir():
-            __walk(item)
 
 
 def main() -> None:
@@ -39,7 +32,7 @@ def main() -> None:
         instructions_dto = Prompt.get_user_instructions_dto()
         location = instructions_dto.location
         user_request = instructions_dto.request
-        crc_obj = crc(
+        crc_obj = Crc(
             location=location,
             hash_file_location=hash_file_location,
             user_request=user_request,

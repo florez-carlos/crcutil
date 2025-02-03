@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from crcutil.dto.hash_dto import HashDTO
 from crcutil.util.static import Static
 
