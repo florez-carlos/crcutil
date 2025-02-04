@@ -39,6 +39,7 @@ class Crc:
                     self.__continue_hash()
                 case 1:
                     self.__create_hash(is_hash_overwrite=True)
+            return None
         elif self.user_request is UserRequest.DIFF:
             hash_1 = self.hash_diff_1
             hash_2 = self.hash_diff_2
