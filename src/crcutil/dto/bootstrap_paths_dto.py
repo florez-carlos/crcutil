@@ -7,3 +7,4 @@ from pathlib import Path
 class BootstrapPathsDTO:
     log_dir: Path
     hash_file: Path
+    report_file: Path
