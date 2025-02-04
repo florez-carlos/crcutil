@@ -7,6 +7,7 @@ from pathlib import Path
 from alive_progress import alive_bar
 
 from crcutil.core.prompt import Prompt
+from crcutil.dto.hash_diff_report_dto import HashDiffReportDTO
 from crcutil.dto.hash_dto import HashDTO
 from crcutil.enums.user_request import UserRequest
 from crcutil.util.crcutil_logger import CrcutilLogger
@@ -20,12 +21,16 @@ class Crc:
         location: Path,
         hash_file_location: Path,
         user_request: UserRequest,
+        hash_diff_1: list[HashDTO],
+        hash_diff_2: list[HashDTO],
     ) -> None:
         self.location = location
         self.hash_file_location = hash_file_location
         self.user_request = user_request
+        self.hash_diff_1 = hash_diff_1
+        self.hash_diff_2 = hash_diff_2
 
-    def do(self) -> None:
+    def do(self) -> HashDiffReportDTO | None:
         if self.user_request is UserRequest.HASH:
             match self.__get_hash_status():
                 case -1:
@@ -35,8 +40,23 @@ class Crc:
                 case 1:
                     self.__create_hash(is_hash_overwrite=True)
         elif self.user_request is UserRequest.DIFF:
-            # TODO:
-            pass
+            hash_1 = self.hash_diff_1
+            hash_2 = self.hash_diff_2
+
+            hash_1_dict = {dto.file: dto.crc for dto in hash_1}
+            hash_2_dict = {dto.file: dto.crc for dto in hash_2}
+
+            changes = [dto for dto in hash_2 if hash_1_dict.get(dto.file)]
+            missing_1 = [
+                dto_1 for dto_1 in hash_1 if dto_1.file not in hash_2_dict
+            ]
+            missing_2 = [
+                dto_2 for dto_2 in hash_2 if dto_2.file not in hash_1_dict
+            ]
+
+            return HashDiffReportDTO(
+                changes=changes, missing_1=missing_1, missing_2=missing_2
+            )
         else:
             description = f"Unsupported request: {self.user_request!s}"
             raise ValueError(description)
@@ -89,8 +109,11 @@ class Crc:
                 else (">", "||")
             )
 
-            print("\n*Press p to pause/resume")
-            print("*Press q to quit")
+            pause_description = "\n*Press p to pause/resume"
+            quit_description = "*Press q to quit"
+            CrcutilLogger.get_console_logger().info(pause_description)
+            CrcutilLogger.get_console_logger().info(quit_description)
+
             length = (
                 len(str_relative_locations) if not total_count else total_count
             )
@@ -151,13 +174,10 @@ class Crc:
         raw = self.__walk(initial_position)
         normalized = [x.relative_to(initial_position) for x in raw]
         sorted_normalized = sorted(normalized, key=lambda path: path.name)
-        sorted_normalized = [str(x) for x in sorted_normalized]
+        sorted_normalized = [str(x) for x in sorted_normalized if x != Path()]
 
         if not offset_position:
-            return [
-                path if path != Path() else str(initial_position)
-                for path in sorted_normalized
-            ]
+            return sorted_normalized
         else:
             is_collect = False
             remaining = []
@@ -193,36 +213,21 @@ class Crc:
 
         return status
 
-    def __is_locations_eq(
-        self, display_name: str, location_a: Path, location_b: Path
-    ) -> bool:
-        result_a = self.__get_crc_hash(location_a, location_a)
-        result_b = self.__get_crc_hash(location_b, location_b)
-        is_eq = result_a == result_b
-
-        description = (
-            f"{display_name} CRC results: {result_a} - {result_b} -> "
-            f"is_eq: {is_eq}"
-        )
-        CrcutilLogger.get_logger().debug(description)
-
-        return is_eq
-
     def __get_crc_hash(self, location: Path, parent_location: Path) -> int:
         crc = 0
-        crc = zlib.crc32(
-            self.__get_crc_from_path(location, parent_location), crc
+        crc = (
+            zlib.crc32(
+                self.__get_crc_from_path(location, parent_location), crc
+            )
+            & 0xFFFFFFFF
         )
-        crc = zlib.crc32(self.__get_crc_from_attr(location), crc)
+        crc = zlib.crc32(self.__get_crc_from_attr(location), crc) & 0xFFFFFFFF
 
         if location.is_file():
-            crc = zlib.crc32(self.__get_crc_from_file_contents(location), crc)
-
-        if location.is_dir():
-            children = location.iterdir()
-            for child in children:
-                child_crc = self.__get_crc_hash(child, parent_location)
-                crc = zlib.crc32(child_crc.to_bytes(4, "little"), crc)
+            crc = (
+                zlib.crc32(self.__get_crc_from_file_contents(location), crc)
+                & 0xFFFFFFFF
+            )
 
         return crc
 
@@ -232,16 +237,29 @@ class Crc:
         return str(location.relative_to(parent_location)).encode("utf-8")
 
     def __get_crc_from_attr(self, location: Path) -> bytes:
-        if location.is_dir():
-            return location.name.encode("utf-8")
         stat = location.stat()
-        file_size = stat.st_size
-        file_mode = stat.st_mode
-        return f"{file_size}:{file_mode}".encode()
+        if location.is_dir():
+            return f"{stat.st_mode}".encode()
+        else:
+            return f"{stat.st_size}:{stat.st_mode}".encode()
 
     def __get_crc_from_file_contents(self, location: Path) -> bytes:
         file_crc = 0
         with location.open("rb") as f:
             for chunk in iter(lambda: f.read(4096), b""):
-                file_crc = zlib.crc32(chunk, file_crc)
-        return file_crc.to_bytes(4, "little")
+                file_crc = zlib.crc32(chunk, file_crc) & 0xFFFFFFFF
+        return file_crc.to_bytes(4, "little", signed=False)
+
+    def __get_missing_hash_dto(
+        self, hash_1: list[HashDTO], hash_2: list[HashDTO]
+    ) -> tuple[list[HashDTO], list[HashDTO]]:
+        hash_1_dict = {dto.file: dto.crc for dto in hash_1}
+        hash_2_dict = {dto.file: dto.crc for dto in hash_2}
+
+        missing_1 = [
+            dto_1 for dto_1 in hash_1 if not hash_2_dict.get(dto_1.file)
+        ]
+        missing_2 = [
+            dto_2 for dto_2 in hash_2 if not hash_1_dict.get(dto_2.file)
+        ]
+        return missing_1, missing_2
