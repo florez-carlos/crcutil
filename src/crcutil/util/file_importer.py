@@ -9,8 +9,12 @@ from pathlib import Path
 import toml
 
 from crcutil.dto.bootstrap_paths_dto import BootstrapPathsDTO
+from crcutil.dto.hash_diff_report_dto import HashDiffReportDTO
 from crcutil.dto.hash_dto import HashDTO
 from crcutil.exception.bootstrap_error import BootstrapError
+from crcutil.serializer.hash_diff_report_serializer import (
+    HashDiffReportSerializer,
+)
 from crcutil.serializer.hash_serializer import HashSerializer
 
 if platform.system() == "Windows":
@@ -103,6 +107,16 @@ class FileImporter(Static):
             json.dump(hash_data, file, indent=4)
 
     @staticmethod
+    def save_hash_diff_report(
+        report_path: Path, hash_diff_report_dto: HashDiffReportDTO
+    ) -> None:
+        with report_path.open(
+            "w", errors="strict", encoding=FileImporter.encoding
+        ) as file:
+            hash_data = HashDiffReportSerializer.to_json(hash_diff_report_dto)
+            json.dump(hash_data, file, indent=4)
+
+    @staticmethod
     def get_hash(crc_path: Path) -> list[HashDTO]:
         with crc_path.open(
             "r", errors="strict", encoding=FileImporter.encoding
@@ -136,11 +150,14 @@ class FileImporter(Static):
             crcutil_dir = Path(home_folder) / "crcutil"
             log_dir = crcutil_dir / "log"
             hash_file = crcutil_dir / "hash.json"
+            report_file = crcutil_dir / "diff.json"
 
             crcutil_dir.mkdir(exist_ok=True)
             log_dir.mkdir(exist_ok=True)
 
-            return BootstrapPathsDTO(log_dir=log_dir, hash_file=hash_file)
+            return BootstrapPathsDTO(
+                log_dir=log_dir, hash_file=hash_file, report_file=report_file
+            )
 
         except Exception as e:
             if platform.system == "Windows":
