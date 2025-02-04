@@ -43,18 +43,18 @@ class Prompt(Static):
             metavar="location",
             type=pathlib.Path,
             nargs="+",
-            help=("Path to "),
+            help=("Path to the dir to generate hashes from"),
             default=None,
         )
 
         parser.add_argument(
-            "-hl",
-            "--hash_location",
-            metavar="hash_location",
+            "-hdf",
+            "--hash_diff_files",
+            metavar=("path_to_hash_file_1", "path_to_hash_file_2"),
             type=pathlib.Path,
-            nargs="+",
-            help=("Path to the Save Manifest file"),
-            default=None,
+            nargs=2,
+            help=("Path of both hash files to generate a diff from"),
+            default=[],
         )
 
         parser.add_argument(
@@ -72,6 +72,7 @@ class Prompt(Static):
         request = args.request
         is_version = args.version
         location = args.location[0]
+        hash_diff_files = args.hash_diff_files
 
         if is_version:
             crcutil_version = ""
@@ -89,6 +90,15 @@ class Prompt(Static):
         if not request:
             description = "Expected a request but none supplied, see -h"
             raise UserError(description)
+        # TODO: Don't need this enforcement?
+        if hash_diff_files:
+            hash_diff_files_count = len(hash_diff_files)
+            if hash_diff_files_count != 2:
+                description = (
+                    f"Expected 2 Hash files but got: "
+                    f"{hash_diff_files_count}"
+                )
+                raise UserError(description)
 
         request = UserRequest.get_user_request_from_str(request)
 
@@ -99,7 +109,9 @@ class Prompt(Static):
         )
         CrcutilLogger.get_logger().debug(debug)
 
-        return UserInstructionsDTO(request=request, location=location)
+        return UserInstructionsDTO(
+            request=request, location=location, hash_diff_files=hash_diff_files
+        )
 
     @staticmethod
     def overwrite_hash_confirm() -> None:
