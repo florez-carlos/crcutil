@@ -89,6 +89,7 @@ class Prompt(Static):
         location = args.location
         location_1 = pathlib.Path()
         location_2 = pathlib.Path()
+        hash_diff_files = []
         if args.location:
             if (
                 len(args.location) == EXPECTED_LOCATION_LENGHT_HASH
@@ -101,6 +102,7 @@ class Prompt(Static):
             ):
                 location_1 = FileImporter.get_path_from_str(args.location[0])
                 location_2 = FileImporter.get_path_from_str(args.location[1])
+                hash_diff_files = [location_1, location_2]
             elif (
                 len(args.location) != EXPECTED_LOCATION_LENGHT_DIFF
                 and request is UserRequest.DIFF
@@ -134,7 +136,7 @@ class Prompt(Static):
         return UserInstructionsDTO(
             request=request,
             location=location_1,
-            hash_diff_files=[location_1, location_2],
+            hash_diff_files=hash_diff_files,
         )
 
     @staticmethod
@@ -145,11 +147,31 @@ class Prompt(Static):
             else "[WARNING]"
         )
         confirmation = (
-            input(f"{warning} Hash file already exists, " "overwrite? (y/n): ")
+            input(f"{warning} Hash file already exists, " "OVERWRITE? (y/n): ")
             .strip()
             .lower()
         )
         if confirmation != "y":
             debug = "Overwrite of hash file cancelled by user"
+            CrcutilLogger.get_logger().debug(debug)
+            sys.exit(0)
+
+    @staticmethod
+    def continue_hash_confirm() -> None:
+        warning = (
+            "⚠️"
+            if sys.stdout.encoding.lower().startswith("utf")
+            else "[WARNING]"
+        )
+        confirmation = (
+            input(
+                f"{warning} Incomplete Hash file already exists, "
+                "RESUME? (y/n): "
+            )
+            .strip()
+            .lower()
+        )
+        if confirmation != "y":
+            debug = "Resume of hash file cancelled by user"
             CrcutilLogger.get_logger().debug(debug)
             sys.exit(0)
