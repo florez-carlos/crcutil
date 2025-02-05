@@ -1,8 +1,12 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
-from crcutil.dto.hash_dto import HashDTO
+if TYPE_CHECKING:
+    from crcutil.dto.hash_dto import HashDTO
+
+
+from dataclasses import dataclass
 
 
 # Frozen=True creates an implicit hash method, eq is created by default
