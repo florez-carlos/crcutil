@@ -47,7 +47,11 @@ class Crc:
             hash_1_dict = {dto.file: dto.crc for dto in hash_1}
             hash_2_dict = {dto.file: dto.crc for dto in hash_2}
 
-            changes = [dto for dto in hash_2 if hash_1_dict.get(dto.file)]
+            changes = [
+                dto
+                for dto in hash_2
+                if dto.file in hash_1_dict and hash_1_dict[dto.file] != dto.crc
+            ]
             missing_1 = [
                 dto_1 for dto_1 in hash_1 if dto_1.file not in hash_2_dict
             ]
@@ -88,11 +92,7 @@ class Crc:
         )
 
     def __write_locations(self, str_relative_locations: list[str]) -> None:
-        hashes = []
-
-        for str_relative_location in str_relative_locations:
-            hashes.append(HashDTO(file=str_relative_location, crc=0))
-
+        hashes = [HashDTO(file=x, crc=0) for x in str_relative_locations]
         FileImporter.save_hash(self.hash_file_location, hashes)
 
     def __write_hash(
@@ -116,7 +116,7 @@ class Crc:
             CrcutilLogger.get_console_logger().info(quit_description)
 
             length = (
-                len(str_relative_locations) if not total_count else total_count
+                total_count if total_count else len(str_relative_locations)
             )
             with alive_bar(length, dual_line=True) as bar:
                 if total_count:
@@ -183,10 +183,9 @@ class Crc:
             is_collect = False
             remaining = []
             for item in sorted_normalized:
-                if item == offset_position:
-                    # Only flip once
-                    if not is_collect:
-                        is_collect = not is_collect
+                # Only flip once
+                if item == offset_position and not is_collect:
+                    is_collect = not is_collect
                 if is_collect:
                     remaining.append(item)
             return remaining
