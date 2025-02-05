@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from crcutil.dto.hash_diff_report_dto import HashDiffReportDTO
+    from crcutil.dto.hash_dto import HashDTO
+
+
 import ctypes.wintypes
 import json
 import os
@@ -9,8 +16,6 @@ from pathlib import Path
 import toml
 
 from crcutil.dto.bootstrap_paths_dto import BootstrapPathsDTO
-from crcutil.dto.hash_diff_report_dto import HashDiffReportDTO
-from crcutil.dto.hash_dto import HashDTO
 from crcutil.exception.bootstrap_error import BootstrapError
 from crcutil.serializer.hash_diff_report_serializer import (
     HashDiffReportSerializer,
