@@ -16,6 +16,9 @@ from crcutil.util.crcutil_logger import CrcutilLogger
 from crcutil.util.file_importer import FileImporter
 from crcutil.util.static import Static
 
+EXPECTED_LOCATION_LENGHT_HASH = 1
+EXPECTED_LOCATION_LENGHT_DIFF = 2
+
 
 class Prompt(Static):
     @staticmethod
@@ -42,18 +45,11 @@ class Prompt(Static):
             "--location",
             metavar="location",
             type=pathlib.Path,
-            nargs="+",
-            help=("Path to the dir to generate hashes from"),
-            default=None,
-        )
-
-        parser.add_argument(
-            "-hdf",
-            "--hash_diff_files",
-            metavar=("path_to_hash_file_1", "path_to_hash_file_2"),
-            type=pathlib.Path,
-            nargs=2,
-            help=("Path of both hash files to generate a diff from"),
+            nargs="*",
+            help=(
+                "Path to hash, or if requesting diff, "
+                "then path of both hash files to diff"
+            ),
             default=[],
         )
 
@@ -69,10 +65,7 @@ class Prompt(Static):
         if unknown:
             raise UnexpectedArgumentError(unknown)
 
-        request = args.request
         is_version = args.version
-        location = args.location[0]
-        hash_diff_files = args.hash_diff_files
 
         if is_version:
             crcutil_version = ""
@@ -87,20 +80,49 @@ class Prompt(Static):
             CrcutilLogger.get_logger().info(crcutil_version)
             sys.exit(0)
 
+        request = args.request
         if not request:
             description = "Expected a request but none supplied, see -h"
             raise UserError(description)
-        # TODO: Don't need this enforcement?
-        if hash_diff_files:
-            hash_diff_files_count = len(hash_diff_files)
-            if hash_diff_files_count != 2:
+        request = UserRequest.get_user_request_from_str(request)
+
+        location = args.location
+        location_1 = pathlib.Path()
+        location_2 = pathlib.Path()
+        if args.location:
+            if (
+                len(args.location) == EXPECTED_LOCATION_LENGHT_HASH
+                and request is UserRequest.HASH
+            ):
+                location_1 = FileImporter.get_path_from_str(args.location[0])
+            elif (
+                len(args.location) == EXPECTED_LOCATION_LENGHT_DIFF
+                and request is UserRequest.DIFF
+            ):
+                location_1 = FileImporter.get_path_from_str(args.location[0])
+                location_2 = FileImporter.get_path_from_str(args.location[1])
+            elif (
+                len(args.location) != EXPECTED_LOCATION_LENGHT_DIFF
+                and request is UserRequest.DIFF
+            ):
                 description = (
                     f"Expected 2 Hash files but got: "
-                    f"{hash_diff_files_count}"
+                    f"{len(args.location)}\n"
+                    f"Example: crcutil diff -l path_to_hash_1 path_to_hash_2"
                 )
                 raise UserError(description)
-
-        request = UserRequest.get_user_request_from_str(request)
+        elif not args.location and request is UserRequest.DIFF:
+            description = (
+                "Expected 2 Hash files but got: 0\n"
+                "Example: crcutil diff -l path_to_hash_1 path_to_hash_2"
+            )
+            raise UserError(description)
+        else:
+            description = (
+                "Expected a location but none supplied\n"
+                "Example: crcutil hash -l path_to_hash"
+            )
+            raise UserError(description)
 
         debug = (
             "Received a User Request:\n"
@@ -110,7 +132,9 @@ class Prompt(Static):
         CrcutilLogger.get_logger().debug(debug)
 
         return UserInstructionsDTO(
-            request=request, location=location, hash_diff_files=hash_diff_files
+            request=request,
+            location=location_1,
+            hash_diff_files=[location_1, location_2],
         )
 
     @staticmethod
