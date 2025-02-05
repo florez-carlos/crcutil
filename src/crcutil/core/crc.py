@@ -10,6 +10,7 @@ from crcutil.core.prompt import Prompt
 from crcutil.dto.hash_diff_report_dto import HashDiffReportDTO
 from crcutil.dto.hash_dto import HashDTO
 from crcutil.enums.user_request import UserRequest
+from crcutil.exception.corrupt_hash_error import CorruptHashError
 from crcutil.util.crcutil_logger import CrcutilLogger
 from crcutil.util.file_importer import FileImporter
 from crcutil.util.keyboard_monitor import KeyboardMonitor
@@ -31,6 +32,14 @@ class Crc:
         self.hash_diff_2 = hash_diff_2
 
     def do(self) -> HashDiffReportDTO | None:
+        """
+        Performs a Hash/Diff
+
+        Returns:
+            HashDiffReportDTO | None: If request is Diff, None if Hash
+        Raises:
+            ValueError: If request other than diff or hash
+        """
         if self.user_request is UserRequest.HASH:
             match self.__get_hash_status():
                 case -1:
@@ -72,19 +81,49 @@ class Crc:
 
         self.hash_file_location.write_text("{}")
 
+        description = f"Creating Hash: {self.location}"
+        CrcutilLogger.get_logger().debug(description)
+
         all_locations = self.seek(self.location)
         self.__write_locations(all_locations)
         self.__write_hash(self.location, all_locations)
 
     def __continue_hash(self) -> None:
+        Prompt.continue_hash_confirm()
         offset_position = ""
 
         original_hashes = FileImporter.get_hash(self.hash_file_location)
+
+        description = (
+            f"Resuming existing Hash: {self.hash_file_location} "
+            f"with location: {self.location}"
+        )
+        CrcutilLogger.get_logger().debug(description)
 
         for hash_dto in original_hashes:
             if not hash_dto.crc:
                 offset_position = hash_dto.file
                 break
+
+        all_locations = self.seek(self.location)
+        for hash_dto in original_hashes:
+            if hash_dto.file not in all_locations:
+                description = (
+                    "An element in the Hash does not exist "
+                    f"in the supplied location: {hash_dto.file}\n"
+                    f"Cannot continue"
+                )
+                raise CorruptHashError(description)
+
+        original_hashes_str = [x.file for x in original_hashes]
+        for location in all_locations:
+            if location not in original_hashes_str:
+                description = (
+                    "An element in the supplied location does not exist "
+                    f"in the Hash: {location}\n"
+                    f"Cannot continue"
+                )
+                raise CorruptHashError(description)
 
         filtered_locations = self.seek(self.location, offset_position)
         self.__write_hash(
@@ -249,17 +288,3 @@ class Crc:
             for chunk in iter(lambda: f.read(4096), b""):
                 file_crc = zlib.crc32(chunk, file_crc) & 0xFFFFFFFF
         return file_crc.to_bytes(4, "little", signed=False)
-
-    def __get_missing_hash_dto(
-        self, hash_1: list[HashDTO], hash_2: list[HashDTO]
-    ) -> tuple[list[HashDTO], list[HashDTO]]:
-        hash_1_dict = {dto.file: dto.crc for dto in hash_1}
-        hash_2_dict = {dto.file: dto.crc for dto in hash_2}
-
-        missing_1 = [
-            dto_1 for dto_1 in hash_1 if not hash_2_dict.get(dto_1.file)
-        ]
-        missing_2 = [
-            dto_2 for dto_2 in hash_2 if not hash_1_dict.get(dto_2.file)
-        ]
-        return missing_1, missing_2
