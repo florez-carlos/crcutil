@@ -1,3 +1,4 @@
+import json
 import sys
 
 from jsonschema.exceptions import ValidationError
@@ -5,6 +6,7 @@ from jsonschema.exceptions import ValidationError
 from crcutil.core.crc import Crc
 from crcutil.core.prompt import Prompt
 from crcutil.exception.bootstrap_error import BootstrapError
+from crcutil.exception.corrupt_hash_error import CorruptHashError
 from crcutil.exception.unexpected_argument_error import UnexpectedArgumentError
 from crcutil.exception.user_error import UserError
 from crcutil.util.crcutil_logger import CrcutilLogger
@@ -78,6 +80,16 @@ def main() -> None:
     except UserError as e:
         sys.tracebacklimit = 0
         description = "\n=====User Error=====\n" f"{e!s}"
+        CrcutilLogger.get_logger().error(description)
+
+    except CorruptHashError as e:
+        sys.tracebacklimit = 0
+        description = "\n=====Corrupt Hash Error=====\n" f"{e!s}"
+        CrcutilLogger.get_logger().error(description)
+
+    except json.decoder.JSONDecodeError as e:
+        sys.tracebacklimit = 0
+        description = "\n=====Corrupt Hash Error=====\n" f"{e!s}"
         CrcutilLogger.get_logger().error(description)
 
     except ValidationError as e:
