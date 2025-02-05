@@ -4,7 +4,6 @@ from jsonschema.exceptions import ValidationError
 
 from crcutil.core.crc import Crc
 from crcutil.core.prompt import Prompt
-from crcutil.enums.user_request import UserRequest
 from crcutil.exception.bootstrap_error import BootstrapError
 from crcutil.exception.unexpected_argument_error import UnexpectedArgumentError
 from crcutil.exception.user_error import UserError
@@ -37,8 +36,9 @@ def main() -> None:
         hash_diff_files = instructions_dto.hash_diff_files
         hash_diff_dtos = []
         if hash_diff_files:
-            for hash_diff_file in hash_diff_files:
-                hash_diff_dtos.append(FileImporter.get_hash(hash_diff_file))
+            hash_diff_dtos = [
+                FileImporter.get_hash(x) for x in hash_diff_files
+            ]
 
         crc_obj = Crc(
             location=location,
@@ -48,14 +48,10 @@ def main() -> None:
             hash_diff_2=hash_diff_dtos[1] if hash_diff_dtos else [],
         )
         hash_diff_report = crc_obj.do()
-        if user_request is UserRequest.DIFF:
-            if hash_diff_report:
-                FileImporter.save_hash_diff_report(
-                    report_file_location, hash_diff_report
-                )
-            else:
-                description = "Requested a diff report but could not get one"
-                raise ValueError(description)
+        if hash_diff_report:
+            FileImporter.save_hash_diff_report(
+                report_file_location, hash_diff_report
+            )
 
         sys.exit(0)
 
