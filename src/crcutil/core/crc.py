@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import errno
 import sys
 import zlib
 from pathlib import Path
@@ -14,6 +15,8 @@ from crcutil.exception.corrupt_hash_error import CorruptHashError
 from crcutil.util.crcutil_logger import CrcutilLogger
 from crcutil.util.file_importer import FileImporter
 from crcutil.util.keyboard_monitor import KeyboardMonitor
+
+WIN_PERMISSION_ERROR = 5
 
 
 class Crc:
@@ -189,6 +192,7 @@ class Crc:
     def __walk(self, path: Path) -> list[Path]:
         """
         Recursively collects all file/dirs in a given path
+        Logs a Console Warning for every path it cannot open
 
         Args:
             path (pathlib.Path): The parent directory to traverse
@@ -196,16 +200,41 @@ class Crc:
         Returns:
             [Path] All file/dir in the tree
         """
+
+        description = (
+            f"{Prompt.WARNING} Lack permissions to evaluate: {path!s}"
+        )
         items = []
+        try:
+            if path.is_file():
+                items.append(path)
+            elif path.is_dir():
+                items.append(path)
+                for child in path.iterdir():
+                    sub_items = self.__walk(child)
+                    items.extend(sub_items)
 
-        if path.is_file():
-            items.append(path)
-        elif path.is_dir():
-            items.append(path)
-            for child in path.iterdir():
-                sub_items = self.__walk(child)
-                items.extend(sub_items)
-
+        except PermissionError:
+            CrcutilLogger.get_console_logger().warning(description)
+        except OSError as e:
+            if (
+                hasattr(e, "winerror") and e.winerror == WIN_PERMISSION_ERROR  # pyright: ignore [reportAttributeAccessIssue]
+            ):
+                CrcutilLogger.get_console_logger().warning(description)
+                debug = "Windows Permission Denied"
+                CrcutilLogger.get_logger().debug(debug)
+            elif e.errno in (errno.EACCES, errno.EPERM):
+                CrcutilLogger.get_console_logger().warning(description)
+                debug = "POSIX permission denied"
+                CrcutilLogger.get_logger().debug(debug)
+            else:
+                description = (
+                    f"{Prompt.WARNING} Unexpected error, "
+                    f"can't evaluate: {path!s}"
+                )
+                CrcutilLogger.get_console_logger().warning(description)
+                debug = f"Unexpected OS Error: {e}"
+                CrcutilLogger.get_logger().debug(debug)
         return items
 
     def seek(
