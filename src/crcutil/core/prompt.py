@@ -22,10 +22,9 @@ EXPECTED_LOCATION_LENGHT_DIFF = 2
 
 class Prompt(Static):
     WARNING = (
-        "⚠️ "
-        if sys.stdout.encoding.lower().startswith("utf")
-        else "[WARNING]"
+        "⚠️ " if sys.stdout.encoding.lower().startswith("utf") else "[WARNING]"
     )
+
     @staticmethod
     def get_user_instructions_dto() -> UserInstructionsDTO:
         parser = argparse.ArgumentParser(
@@ -147,7 +146,10 @@ class Prompt(Static):
     @staticmethod
     def overwrite_hash_confirm() -> None:
         confirmation = (
-            input(f"{Prompt.WARNING} Hash file already exists, " "OVERWRITE? (y/n): ")
+            input(
+                f"{Prompt.WARNING} Hash file already exists, "
+                "OVERWRITE? (y/n): "
+            )
             .strip()
             .lower()
         )
