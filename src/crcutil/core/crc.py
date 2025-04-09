@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import errno
+import os
 import sys
 import zlib
 from pathlib import Path
@@ -243,7 +244,7 @@ class Crc:
         raw = self.__walk(initial_position)
         normalized = [x.relative_to(initial_position) for x in raw]
         sorted_normalized = sorted(normalized, key=lambda path: path.name)
-        sorted_normalized = [str(x) for x in sorted_normalized if x != Path()]
+        sorted_normalized = [os.fsdecode(x) for x in sorted_normalized if x != Path()]
 
         if not offset_position:
             return sorted_normalized

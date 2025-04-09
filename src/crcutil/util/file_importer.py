@@ -109,7 +109,7 @@ class FileImporter(Static):
             "w", errors="strict", encoding=FileImporter.encoding
         ) as file:
             hash_data = HashSerializer.to_json(hash_dto)
-            json.dump(hash_data, file, indent=4)
+            json.dump(hash_data, file, indent=4, ensure_ascii=False)
 
     @staticmethod
     def save_hash_diff_report(
@@ -119,7 +119,7 @@ class FileImporter(Static):
             "w", errors="strict", encoding=FileImporter.encoding
         ) as file:
             hash_data = HashDiffReportSerializer.to_json(hash_diff_report_dto)
-            json.dump(hash_data, file, indent=4)
+            json.dump(hash_data, file, indent=4, ensure_ascii=False)
 
     @staticmethod
     def get_hash(crc_path: Path) -> list[HashDTO]:
