@@ -93,7 +93,8 @@ class Crc:
         self.__write_hash(self.location, all_locations)
 
     def __continue_hash(self) -> None:
-        Prompt.continue_hash_confirm()
+        if not Prompt.continue_hash_confirm():
+            Prompt.overwrite_hash_confirm()
 
         original_hashes = FileImporter.get_hash(self.hash_file_location)
 
