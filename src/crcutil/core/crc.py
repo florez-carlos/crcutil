@@ -94,7 +94,6 @@ class Crc:
 
     def __continue_hash(self) -> None:
         Prompt.continue_hash_confirm()
-        offset_position = ""
 
         original_hashes = FileImporter.get_hash(self.hash_file_location)
 
@@ -104,10 +103,9 @@ class Crc:
         )
         CrcutilLogger.get_logger().debug(description)
 
-        for hash_dto in original_hashes:
-            if not hash_dto.crc:
-                offset_position = hash_dto.file
-                break
+        pending_crcs = [
+            hash_dto.file for hash_dto in original_hashes if not hash_dto.crc
+        ]
 
         all_locations = self.seek(self.location)
         for hash_dto in original_hashes:
@@ -129,7 +127,7 @@ class Crc:
                 )
                 raise CorruptHashError(description)
 
-        filtered_locations = self.seek(self.location, offset_position)
+        filtered_locations = self.seek(self.location, pending_crcs)
         self.__write_hash(
             self.location, filtered_locations, len(original_hashes)
         )
@@ -239,8 +237,12 @@ class Crc:
         return items
 
     def seek(
-        self, initial_position: Path, offset_position: str = ""
+        self,
+        initial_position: Path,
+        pending_crcs: list[str] | None = None,
     ) -> list[str]:
+        if pending_crcs is None:
+            pending_crcs = []
         raw = self.__walk(initial_position)
         normalized = [x.relative_to(initial_position) for x in raw]
         sorted_normalized = sorted(normalized, key=lambda path: path.name)
@@ -248,18 +250,10 @@ class Crc:
             os.fsdecode(x) for x in sorted_normalized if x != Path()
         ]
 
-        if not offset_position:
+        if not pending_crcs:
             return sorted_normalized
         else:
-            is_collect = False
-            remaining = []
-            for item in sorted_normalized:
-                # Only flip once
-                if item == offset_position and not is_collect:
-                    is_collect = not is_collect
-                if is_collect:
-                    remaining.append(item)
-            return remaining
+            return [x for x in sorted_normalized if x in pending_crcs]
 
     def __get_hash_status(self) -> int:
         """
