@@ -99,13 +99,19 @@ class Prompt(Static):
                 len(args.location) == EXPECTED_LOCATION_LENGHT_HASH
                 and request is UserRequest.HASH
             ):
-                location_1 = FileImporter.get_path_from_str(args.location[0])
+                location_1 = FileImporter.get_path_from_str(
+                    args.location[0]
+                ).resolve()
             elif (
                 len(args.location) == EXPECTED_LOCATION_LENGHT_DIFF
                 and request is UserRequest.DIFF
             ):
-                location_1 = FileImporter.get_path_from_str(args.location[0])
-                location_2 = FileImporter.get_path_from_str(args.location[1])
+                location_1 = FileImporter.get_path_from_str(
+                    args.location[0]
+                ).resolve()
+                location_2 = FileImporter.get_path_from_str(
+                    args.location[1]
+                ).resolve()
                 hash_diff_files = [location_1, location_2]
             elif (
                 len(args.location) != EXPECTED_LOCATION_LENGHT_DIFF
@@ -159,7 +165,7 @@ class Prompt(Static):
             sys.exit(0)
 
     @staticmethod
-    def continue_hash_confirm() -> None:
+    def continue_hash_confirm() -> bool:
         confirmation = (
             input(
                 f"{Prompt.WARNING} Incomplete Hash file already exists, "
@@ -171,4 +177,6 @@ class Prompt(Static):
         if confirmation != "y":
             debug = "Resume of hash file cancelled by user"
             CrcutilLogger.get_logger().debug(debug)
-            sys.exit(0)
+            return False
+        else:
+            return True
