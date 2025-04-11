@@ -362,7 +362,6 @@ class Crc:
                 relative_location = Path(str_relative_location)
                 abs_location = (parent_location / relative_location).resolve()
                 crc = self.__get_crc_hash(abs_location, parent_location)
-                time.sleep(6)
 
                 # Add the result to the queue
                 with lock:
