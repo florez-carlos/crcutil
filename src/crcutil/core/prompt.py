@@ -167,7 +167,7 @@ class Prompt(Static):
             "Received a User Request:\n"
             f"Request: {request.value if request else None}\n"
             f"Location: {location!s}\n"
-            f"Exclusion List: {exclusion_list!s}\n"
+            f"Exclusion List: {exclude!s}\n"
         )
         CrcutilLogger.get_logger().debug(debug)
 
