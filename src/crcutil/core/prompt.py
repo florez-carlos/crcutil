@@ -14,6 +14,7 @@ from crcutil.exception.unexpected_argument_error import (
 from crcutil.exception.user_error import UserError
 from crcutil.util.crcutil_logger import CrcutilLogger
 from crcutil.util.file_importer import FileImporter
+from crcutil.util.path_ops import PathOps
 from crcutil.util.static import Static
 
 EXPECTED_LOCATION_LENGHT_HASH = 1
@@ -54,6 +55,16 @@ class Prompt(Static):
                 "Path to hash, or if requesting diff, "
                 "then path of both hash files to diff"
             ),
+            default=[],
+        )
+
+        parser.add_argument(
+            "-e",
+            "--exclude",
+            metavar="exclude",
+            type=pathlib.Path,
+            nargs="*",
+            help=("Paths to exclude from the hash"),
             default=[],
         )
 
@@ -136,10 +147,27 @@ class Prompt(Static):
             )
             raise UserError(description)
 
+        exclude = args.exclude
+        exclusion_list = (
+            [
+                item
+                for excluded in exclude
+                for item in PathOps.walk(
+                    FileImporter.get_path_from_str(
+                        excluded
+                    ).resolve(),  # Added missing path conversion
+                    supress_warnings=True,
+                )
+            ]
+            if exclude
+            else []
+        )
+
         debug = (
             "Received a User Request:\n"
             f"Request: {request.value if request else None}\n"
             f"Location: {location!s}\n"
+            f"Exclusion List: {exclusion_list!s}\n"
         )
         CrcutilLogger.get_logger().debug(debug)
 
@@ -147,6 +175,7 @@ class Prompt(Static):
             request=request,
             location=location_1,
             hash_diff_files=hash_diff_files,
+            exclusion_list=exclusion_list,
         )
 
     @staticmethod

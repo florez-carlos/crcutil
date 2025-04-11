@@ -41,6 +41,7 @@ def main() -> None:
             hash_diff_dtos = [
                 FileImporter.get_hash(x) for x in hash_diff_files
             ]
+        exclusion_list = instructions_dto.exclusion_list
 
         crc_obj = Crc(
             location=location,
@@ -48,6 +49,7 @@ def main() -> None:
             user_request=user_request,
             hash_diff_1=hash_diff_dtos[0] if hash_diff_dtos else [],
             hash_diff_2=hash_diff_dtos[1] if hash_diff_dtos else [],
+            exclusion_list=exclusion_list,
         )
         hash_diff_report = crc_obj.do()
         if hash_diff_report:
