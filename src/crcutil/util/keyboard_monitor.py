@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import platform
-import threading
 
 from pynput import keyboard
 from Xlib import X, display
@@ -15,7 +14,6 @@ class KeyboardMonitor:
         self.is_paused = False
         self.is_quit = False
         self.listener = None
-        self._lock = threading.Lock()  # Regular lock for thread safety
 
     def start(self) -> None:
         self.listener = keyboard.Listener(on_press=self.on_press)
@@ -24,27 +22,17 @@ class KeyboardMonitor:
     def stop(self) -> None:
         if self.listener:
             self.listener.stop()
-        with self._lock:
-            self.is_quit = True
+        self.is_quit = True
 
     def on_press(self, key: keyboard.Key | keyboard.KeyCode | None) -> None:
         try:
             if self.is_terminal_focused():
                 if key == keyboard.KeyCode.from_char("p"):
-                    with self._lock:
-                        self.is_paused = not self.is_paused
+                    self.is_paused = not self.is_paused
                 if key == keyboard.KeyCode.from_char("q"):
                     self.stop()
         except AttributeError:
             pass
-
-    def get_pause_status(self) -> bool:
-        with self._lock:
-            return self.is_paused
-
-    def get_quit_status(self) -> bool:
-        with self._lock:
-            return self.is_quit
 
     def is_terminal_focused(self) -> bool:
         try:
