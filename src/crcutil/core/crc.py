@@ -3,6 +3,8 @@ from __future__ import annotations
 import errno
 import os
 import sys
+import threading
+import time
 import zlib
 from pathlib import Path
 
@@ -34,6 +36,8 @@ class Crc:
         self.user_request = user_request
         self.hash_diff_1 = hash_diff_1
         self.hash_diff_2 = hash_diff_2
+        self.crc_thread = None
+        self.crc_thread_stop = threading.Event()
 
     def do(self) -> HashDiffReportDTO | None:
         """
@@ -95,6 +99,8 @@ class Crc:
     def __continue_hash(self) -> None:
         if not Prompt.continue_hash_confirm():
             Prompt.overwrite_hash_confirm()
+            self.__create_hash()
+            return
 
         original_hashes = FileImporter.get_hash(self.hash_file_location)
 
@@ -160,34 +166,135 @@ class Crc:
             length = (
                 total_count if total_count else len(str_relative_locations)
             )
+
+            # Shared data between threads
+            results_queue = []  # List to store calculated CRCs
+            lock = threading.Lock()  # Lock for thread safety
+            current_file = {"name": ""}  # Current file being processed
+
+            # Reset the stop event
+            self.crc_thread_stop = threading.Event()
+
+            # Start the CRC worker thread
+            self.crc_thread = threading.Thread(
+                target=self.__crc_worker,
+                args=(
+                    parent_location,
+                    str_relative_locations,
+                    results_queue,
+                    lock,
+                    current_file,
+                ),
+            )
+            self.crc_thread.daemon = True
+            self.crc_thread.start()
+
             with alive_bar(length, dual_line=True) as bar:
                 if total_count:
                     offset_count = total_count - len(str_relative_locations)
                     for _ in range(offset_count):
                         bar()
 
-                for str_relative_location in str_relative_locations:
-                    while monitor.is_paused:
-                        bar.text = f"{pause_icon} PAUSED"
-                    while monitor.is_quit:
+                # Track processed files
+                processed_files = set()
+
+                # Main loop
+                # Process results as they come in while monitoring keyboard
+                while len(processed_files) < len(str_relative_locations):
+                    # Check keyboard state
+                    if monitor.get_quit_status():
+                        self.crc_thread_stop.set()
+                        if self.crc_thread.is_alive():
+                            self.crc_thread.join(timeout=1.0)
                         sys.exit(0)
 
-                    bar.text = f"{play_icon} {str_relative_location}"
+                    # Handle pause state
+                    if monitor.get_pause_status():
+                        self.crc_thread_stop.set()
+                        bar.text = f"{pause_icon} PAUSED"
+                    else:
+                        # If previously paused and thread is stopped, restart
+                        if (
+                            self.crc_thread_stop.is_set()
+                            and not self.crc_thread.is_alive()
+                        ):
+                            # Clear the stop event
+                            self.crc_thread_stop.clear()
 
-                    relative_location = Path(str_relative_location)
-                    abs_location = (
-                        parent_location / relative_location
-                    ).resolve()
+                            # Start new CRC worker thread with remaining files
+                            remaining_files = [
+                                loc
+                                for loc in str_relative_locations
+                                if loc not in processed_files
+                            ]
+                            self.crc_thread = threading.Thread(
+                                target=self.__crc_worker,
+                                args=(
+                                    parent_location,
+                                    remaining_files,
+                                    results_queue,
+                                    lock,
+                                    current_file,
+                                ),
+                            )
+                            self.crc_thread.daemon = True
+                            self.crc_thread.start()
 
-                    crc = self.__get_crc_hash(abs_location, parent_location)
-                    hashes = FileImporter.get_hash(self.hash_file_location)
-                    hashes.append(HashDTO(file=str_relative_location, crc=crc))
+                        # Show current file being processed
+                        with lock:
+                            current = current_file["name"]
+                        if current:
+                            bar.text = f"{play_icon} {current}"
 
-                    FileImporter.save_hash(self.hash_file_location, hashes)
+                    # Only process results if NOT paused
+                    if not monitor.get_pause_status():
+                        # Check for completed CRC calculations
+                        completed_results = []
+                        with lock:
+                            if results_queue:
+                                completed_results = results_queue.copy()
+                                results_queue.clear()
 
-                    bar()
+                        # Process completed results
+                        for str_relative_location, crc in completed_results:
+                            if str_relative_location not in processed_files:
+                                # Update hash file
+                                hashes = FileImporter.get_hash(
+                                    self.hash_file_location
+                                )
+                                hashes.append(
+                                    HashDTO(
+                                        file=str_relative_location, crc=crc
+                                    )
+                                )
+                                FileImporter.save_hash(
+                                    self.hash_file_location, hashes
+                                )
+
+                                # Update progress
+                                processed_files.add(str_relative_location)
+                                bar()
+
+                    # Short sleep to avoid CPU spinning
+                    time.sleep(0.05)
+
+                # Wait for the CRC thread to finish if it hasn't already
+                self.crc_thread_stop.set()
+                if self.crc_thread.is_alive():
+                    self.crc_thread.join(timeout=1.0)
+
         except KeyboardInterrupt:
+            # Handle Ctrl+C
+            self.crc_thread_stop.set()
+            if self.crc_thread and self.crc_thread.is_alive():
+                self.crc_thread.join(timeout=1.0)
             monitor.stop()
+        finally:
+            # Ensure cleanup
+            monitor.stop()
+            self.crc_thread_stop.set()
+            if self.crc_thread and self.crc_thread.is_alive():
+                self.crc_thread.join(timeout=1.0)
 
     def __walk(self, path: Path) -> list[Path]:
         """
@@ -278,6 +385,38 @@ class Crc:
             status = 1
 
         return status
+
+    def __crc_worker(
+        self,
+        parent_location: Path,
+        str_relative_locations: list[str],
+        results_queue: list,
+        lock: threading.Lock,
+        current_file: dict,
+    ) -> None:
+        """Worker function that runs in a separate thread to calculate CRCs"""
+        try:
+            for str_relative_location in str_relative_locations:
+                # Check if we should stop
+                if self.crc_thread_stop.is_set():
+                    return
+
+                # Update the current file being processed
+                with lock:
+                    current_file["name"] = str_relative_location
+
+                # Calculate CRC
+                relative_location = Path(str_relative_location)
+                abs_location = (parent_location / relative_location).resolve()
+                crc = self.__get_crc_hash(abs_location, parent_location)
+                time.sleep(6)
+
+                # Add the result to the queue
+                with lock:
+                    results_queue.append((str_relative_location, crc))
+
+        except Exception as e:  # noqa: BLE001
+            CrcutilLogger.get_logger().error(f"Error in CRC thread: {e}")
 
     def __get_crc_hash(self, location: Path, parent_location: Path) -> int:
         crc = 0
