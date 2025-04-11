@@ -14,7 +14,6 @@ from crcutil.exception.unexpected_argument_error import (
 from crcutil.exception.user_error import UserError
 from crcutil.util.crcutil_logger import CrcutilLogger
 from crcutil.util.file_importer import FileImporter
-from crcutil.util.path_ops import PathOps
 from crcutil.util.static import Static
 
 EXPECTED_LOCATION_LENGHT_HASH = 1
