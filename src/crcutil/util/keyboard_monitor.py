@@ -5,6 +5,7 @@ import platform
 import threading
 
 from pynput import keyboard
+from Xlib import X, display
 
 from crcutil.util.crcutil_logger import CrcutilLogger
 
@@ -64,8 +65,6 @@ class KeyboardMonitor:
                 )
 
             elif platform.system() == "Linux":
-                from Xlib import X, display
-
                 disp = display.Display(os.environ["DISPLAY"])
 
                 root = disp.screen().root
