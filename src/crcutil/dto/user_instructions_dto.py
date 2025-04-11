@@ -15,4 +15,3 @@ class UserInstructionsDTO:
     request: UserRequest
     location: Path
     hash_diff_files: list[Path]
-    exclusion_list: list[Path]

@@ -26,14 +26,12 @@ class Crc:
         user_request: UserRequest,
         hash_diff_1: list[HashDTO],
         hash_diff_2: list[HashDTO],
-        exclusion_list: list[Path],
     ) -> None:
         self.location = location
         self.hash_file_location = hash_file_location
         self.user_request = user_request
         self.hash_diff_1 = hash_diff_1
         self.hash_diff_2 = hash_diff_2
-        self.exclusion_list = exclusion_list
 
     def do(self) -> HashDiffReportDTO | None:
         """
@@ -198,7 +196,6 @@ class Crc:
         if pending_crcs is None:
             pending_crcs = []
         raw = PathOps.walk(initial_position)
-        raw = [x for x in raw if x not in self.exclusion_list]
         normalized = [x.relative_to(initial_position) for x in raw]
         sorted_normalized = sorted(normalized, key=lambda path: path.name)
         sorted_normalized = [
