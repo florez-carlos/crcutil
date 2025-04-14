@@ -58,6 +58,19 @@ class Prompt(Static):
         )
 
         parser.add_argument(
+            "-o",
+            "--output",
+            metavar="output",
+            type=pathlib.Path,
+            nargs="?",
+            help=(
+                "Path to store the hash or diff file"
+                "if none specified, then it's saved at the default location"
+            ),
+            default=None,
+        )
+
+        parser.add_argument(
             "-v",
             "--version",
             action="store_true",
@@ -136,10 +149,27 @@ class Prompt(Static):
             )
             raise UserError(description)
 
+        output = args.output
+
+        if output:
+            output = args.output.resolve()
+            if output.is_dir():
+                if request is UserRequest.HASH:
+                    output = output / "hash.json"
+                elif request is UserRequest.DIFF:
+                    output = output / "diff.json"
+                else:
+                    description = (
+                        "Specified an output but "
+                        f"request is not supported: {request.value}"
+                    )
+                    raise UserError(description)
+
         debug = (
             "Received a User Request:\n"
             f"Request: {request.value if request else None}\n"
             f"Location: {location!s}\n"
+            f"Output: {output!s}\n"
         )
         CrcutilLogger.get_logger().debug(debug)
 
@@ -147,6 +177,7 @@ class Prompt(Static):
             request=request,
             location=location_1,
             hash_diff_files=hash_diff_files,
+            output=output,
         )
 
     @staticmethod

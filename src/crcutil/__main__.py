@@ -41,6 +41,11 @@ def main() -> None:
             hash_diff_dtos = [
                 FileImporter.get_hash(x) for x in hash_diff_files
             ]
+        output = instructions_dto.output
+
+        if output:
+            hash_file_location = output
+            report_file_location = output
 
         crc_obj = Crc(
             location=location,
