@@ -196,7 +196,9 @@ class Crc:
         if pending_crcs is None:
             pending_crcs = []
         raw = PathOps.walk(initial_position)
-        normalized = [x.relative_to(initial_position) for x in raw]
+        system_files = ["desktop.ini", "Thumbs.db", ".DS_Store"]
+        filtered = [x for x in raw if x.name not in system_files]
+        normalized = [x.relative_to(initial_position) for x in filtered]
         sorted_normalized = sorted(normalized, key=lambda path: path.name)
         sorted_normalized = [
             os.fsdecode(x) for x in sorted_normalized if x != Path()
