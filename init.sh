@@ -7,8 +7,8 @@ color_normal=$(tput sgr0)
 setopt aliases
 
 
-required_python_version_path_name="3.11"
-required_python_version="3.11.6"
+required_python_version_path_name="3.12"
+required_python_version="3.12.10"
 
 if [ $UID -eq 0 ]; then
     printf "%s\n" "${color_red}ERROR:${color_normal}Please DO NOT run this script with sudo"
