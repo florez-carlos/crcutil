@@ -2,7 +2,7 @@ import logging
 
 # ruff: noqa: ANN002, ANN003, ANN204, RUF012
 import logging.config
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -19,9 +19,9 @@ class CrcutilLogger(metaclass=SingletonMeta):
     def __init__(self, log_dir: Path, log_config: dict) -> None:
         if not hasattr(self, "initialized"):  # Avoid reinitialization
             # Time data in UTC required by date named log files
-            day = str(datetime.now(timezone.utc).day)
-            month = str(datetime.now(timezone.utc).month)
-            year = str(datetime.now(timezone.utc).year)
+            day = str(datetime.now(UTC).day)
+            month = str(datetime.now(UTC).month)
+            year = str(datetime.now(UTC).year)
 
             log_file_name = f"{year}-{month}-{day}.log"
             # Rewrite contents of YAML config to accomodate

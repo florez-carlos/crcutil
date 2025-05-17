@@ -67,7 +67,7 @@ def main() -> None:
             description = "Successful System Exit"
             CrcutilLogger.get_logger().debug(description)
         else:
-            description = "\n=====Unexpected Error=====\n" f"{e!s}"
+            description = f"\n=====Unexpected Error=====\n{e!s}"
             CrcutilLogger.get_logger().exception(description)
             raise
 
@@ -84,32 +84,32 @@ def main() -> None:
 
     except UserError as e:
         sys.tracebacklimit = 0
-        description = "\n=====User Error=====\n" f"{e!s}"
+        description = f"\n=====User Error=====\n{e!s}"
         CrcutilLogger.get_logger().error(description)
 
     except CorruptHashError as e:
         sys.tracebacklimit = 0
-        description = "\n=====Corrupt Hash Error=====\n" f"{e!s}"
+        description = f"\n=====Corrupt Hash Error=====\n{e!s}"
         CrcutilLogger.get_logger().error(description)
 
     except json.decoder.JSONDecodeError as e:
         sys.tracebacklimit = 0
-        description = "\n=====Corrupt Hash Error=====\n" f"{e!s}"
+        description = f"\n=====Corrupt Hash Error=====\n{e!s}"
         CrcutilLogger.get_logger().error(description)
 
     except ValidationError as e:
         sys.tracebacklimit = 0
-        description = "\n=====Invalid Schema Error=====\n" f"{e!s}"
+        description = f"\n=====Invalid Schema Error=====\n{e!s}"
         CrcutilLogger.get_logger().error(description)
 
     # No regular logger can be expected to be initialized
     except BootstrapError as e:
-        description = "\n=====Program Initialization Error=====\n" f"{e!s}"
+        description = f"\n=====Program Initialization Error=====\n{e!s}"
         e.args = (description,)
         raise
 
     except Exception as e:  # noqa: BLE001
-        description = "\n=====Unexpected Error=====\n" f"{e!s}"
+        description = f"\n=====Unexpected Error=====\n{e!s}"
         CrcutilLogger.get_logger().exception(description)
 
 
