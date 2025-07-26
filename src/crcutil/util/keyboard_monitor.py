@@ -46,10 +46,12 @@ class KeyboardMonitor:
                 length = windll.user32.GetWindowTextLengthW(hwnd)
                 buff = ctypes.create_unicode_buffer(length + 1)
                 windll.user32.GetWindowTextW(hwnd, buff, length + 1)
-                return buff.value.lower().strip().startswith(
-                    "command prompt"
-                ) or buff.value.lower().strip().startswith(
-                    "windows powershell"
+                return (
+                    buff.value.lower().strip().startswith("command prompt")
+                    or buff.value.lower()
+                    .strip()
+                    .startswith("windows powershell")
+                    or buff.value.lower().strip().startswith("powershell")
                 )
 
             elif platform.system() == "Linux":
