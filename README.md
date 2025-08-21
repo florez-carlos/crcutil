@@ -15,7 +15,6 @@ dev environment <br>
 ## Table of Contents
 
 * [Installation](#installation)
-  * [pip](#pip)
 * [Usage](#usage)
   * [crc](#crc)
   * [diff](#diff)
@@ -23,7 +22,15 @@ dev environment <br>
 * [Development](#development)
 
 ## Installation
-### Pip
+> [!NOTE]
+> - Requires Python 3.12+<br >
+> - Requires pip
+
+- Windows
+```bash
+pip install crcutil
+```
+- Linux
 ```bash
 python3 -m pip install crcutil
 ```
@@ -32,13 +39,12 @@ python3 -m pip install crcutil
 
 ### crc
 
--l The location for which to generate the crc
-
 ```bash
 crcutil crc -l 'C:\path_to_traverse' -o 'C:\path_to_output.json'
 ```
-This will output a crc.json file in the supplied -o argument or
-if no -o argument supplied, then to the default output location: <br >
+> [!NOTE]
+> This will output a crc.json file in the supplied -o argument.<br >
+> If no -o argument is supplied, then the default output location is: <br >
 - Windows
 ```bash
 C:\Users\<USERNAME>\Documents\crcutil\
@@ -47,18 +53,16 @@ C:\Users\<USERNAME>\Documents\crcutil\
 ```bash
 $HOME/crcutil
 ```
-### Diff
+### diff
 If you hold 2 crc files generated from the same directory
 and would like to compare the differences.
-
--l The location of both crc files to compare
 
 ```bash
 crcutil diff -l 'C:\crc_1.json' 'C:\crc_2.json' -o 'C:\diff.json'
 ```
-
-This will compare both crc files and generate a diff.json in the supplied -o argument or
-if no -o argument supplied, then to the default output location: <br >
+> [!NOTE]
+> This will compare both crc files and output a diff.json in the supplied -o argument.<br >
+> If no -o argument is supplied, then the default output location is: <br >
 - Windows
 ```bash
 C:\Users\<USERNAME>\Documents\crcutil\
@@ -68,10 +72,8 @@ C:\Users\<USERNAME>\Documents\crcutil\
 $HOME/crcutil
 ```
 ### Pause/Resume 
-- The program can be paused/resumed at any time by pressing p.
-- If you exit the program or it crashes unexpectedly mid operation, 
-invoke the same command and the program will continue where it left off,
-as long as the crc file is not corrupted
+- The tool can be paused/resumed at any time by pressing p.
+- The tool can be exited at any time by pressing q (will continue where left off if you invoke the same command).
 
 ## Development
 
