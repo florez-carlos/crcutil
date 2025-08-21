@@ -146,10 +146,10 @@ class Crc:
         total_count: int = 0,
     ) -> None:
         try:
-            play_icon, pause_icon = (
-                ("▶", "⏸")
+            play_icon, pause_icon, cancel_icon = (
+                ("▶", "⏸", "✖")
                 if sys.stdout.encoding.lower().startswith("utf")
-                else (">", "||")
+                else (">", "||", "X")
             )
 
             pause_description = "\n*Press p to pause/resume"
@@ -157,6 +157,7 @@ class Crc:
             CrcutilLogger.get_console_logger().info(pause_description)
             CrcutilLogger.get_console_logger().info(quit_description)
 
+            self.monitor.start()
             length = (
                 total_count if total_count else len(str_relative_locations)
             )
@@ -182,38 +183,41 @@ class Crc:
                             if self.monitor.is_paused:
                                 bar.text = f"{pause_icon} PAUSED"
                                 sleep(0.500)
-                                continue
 
                             if not self.monitor.is_paused:
                                 bar.text = (
                                     f"{play_icon} {str_relative_location}"
                                 )
+                                sleep(0.500)
+                                if future.done():
+                                    hashes = FileImporter.get_hash(
+                                        self.hash_file_location
+                                    )
+                                    hashes.append(
+                                        HashDTO(
+                                            file=str_relative_location,
+                                            crc=future.result(timeout=0.00),
+                                        )
+                                    )
+                                    FileImporter.save_hash(
+                                        self.hash_file_location, hashes
+                                    )
+                                    bar()
+                                    break
 
                             if self.monitor.is_quit:
-                                checksum.shutdown()
+                                CrcutilLogger.get_console_logger().info(
+                                    f"{cancel_icon} Quitting..."
+                                )
                                 sys.exit(0)
-
-                            if future.done() and not self.monitor.is_paused:
-                                hashes = FileImporter.get_hash(
-                                    self.hash_file_location
-                                )
-                                hashes.append(
-                                    HashDTO(
-                                        file=str_relative_location,
-                                        crc=future.result(timeout=0.00),
-                                    )
-                                )
-                                FileImporter.save_hash(
-                                    self.hash_file_location, hashes
-                                )
-                                break
 
                     finally:
                         checksum.shutdown()
-                        bar()
 
         except KeyboardInterrupt:
             # Handle Ctrl+C
+            self.monitor.stop()
+        finally:
             self.monitor.stop()
 
     def seek(

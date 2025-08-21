@@ -5,9 +5,9 @@ from pathlib import Path
 
 
 class Checksum:
-    def __init__(self) -> None:
-        self.location: Path
-        self.parent_location: Path
+    def __init__(self, location: Path, parent_location: Path) -> None:
+        self.location = location
+        self.parent_location = parent_location
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
         self.future = None
 
@@ -23,7 +23,7 @@ class Checksum:
         return self.future
 
     def shutdown(self) -> None:
-        self.executor.shutdown()
+        self.executor.shutdown(wait=False)
 
     def __get_checksum(self) -> int:
         checksum = 0

@@ -16,13 +16,16 @@ class KeyboardMonitor:
         self.listener = None
 
     def start(self) -> None:
+        self.is_paused = False
+        self.is_quit = False
         self.listener = keyboard.Listener(on_press=self.on_press)
         self.listener.start()
 
     def stop(self) -> None:
+        self.is_paused = False
+        self.is_quit = True
         if self.listener:
             self.listener.stop()
-        self.is_quit = True
 
     def on_press(self, key: keyboard.Key | keyboard.KeyCode | None) -> None:
         try:
