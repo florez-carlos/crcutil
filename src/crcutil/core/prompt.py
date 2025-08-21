@@ -16,7 +16,7 @@ from crcutil.util.crcutil_logger import CrcutilLogger
 from crcutil.util.file_importer import FileImporter
 from crcutil.util.static import Static
 
-EXPECTED_LOCATION_LENGHT_HASH = 1
+EXPECTED_LOCATION_LENGHT_CRC = 1
 EXPECTED_LOCATION_LENGHT_DIFF = 2
 
 
@@ -51,8 +51,8 @@ class Prompt(Static):
             type=pathlib.Path,
             nargs="*",
             help=(
-                "Path to hash, or if requesting diff, "
-                "then path of both hash files to diff"
+                "Path to read, or if requesting diff, "
+                "then path of both crc files to diff"
             ),
             default=[],
         )
@@ -64,7 +64,7 @@ class Prompt(Static):
             type=pathlib.Path,
             nargs="?",
             help=(
-                "Path to store the hash or diff file"
+                "Path to store the crc or diff file"
                 "if none specified, then it's saved at the default location"
             ),
             default=None,
@@ -106,11 +106,11 @@ class Prompt(Static):
         location = args.location
         location_1 = pathlib.Path()
         location_2 = pathlib.Path()
-        hash_diff_files = []
+        crc_diff_files = []
         if args.location:
             if (
-                len(args.location) == EXPECTED_LOCATION_LENGHT_HASH
-                and request is UserRequest.HASH
+                len(args.location) == EXPECTED_LOCATION_LENGHT_CRC
+                and request is UserRequest.CRC
             ):
                 location_1 = FileImporter.get_path_from_str(
                     args.location[0]
@@ -125,27 +125,27 @@ class Prompt(Static):
                 location_2 = FileImporter.get_path_from_str(
                     args.location[1]
                 ).resolve()
-                hash_diff_files = [location_1, location_2]
+                crc_diff_files = [location_1, location_2]
             elif (
                 len(args.location) != EXPECTED_LOCATION_LENGHT_DIFF
                 and request is UserRequest.DIFF
             ):
                 description = (
-                    f"Expected 2 Hash files but got: "
+                    f"Expected 2 crc files but got: "
                     f"{len(args.location)}\n"
-                    f"Example: crcutil diff -l path_to_hash_1 path_to_hash_2"
+                    f"Example: crcutil diff -l path_to_crc_1 path_to_crc_2"
                 )
                 raise UserError(description)
         elif not args.location and request is UserRequest.DIFF:
             description = (
-                "Expected 2 Hash files but got: 0\n"
-                "Example: crcutil diff -l path_to_hash_1 path_to_hash_2"
+                "Expected 2 crc files but got: 0\n"
+                "Example: crcutil diff -l path_to_crc_1 path_to_crc_2"
             )
             raise UserError(description)
         else:
             description = (
                 "Expected a location but none supplied\n"
-                "Example: crcutil hash -l path_to_hash"
+                "Example: crcutil crc -l path_to_crc"
             )
             raise UserError(description)
 
@@ -154,8 +154,8 @@ class Prompt(Static):
         if output:
             output = args.output.resolve()
             if output.is_dir():
-                if request is UserRequest.HASH:
-                    output = output / "hash.json"
+                if request is UserRequest.CRC:
+                    output = output / "crc.json"
                 elif request is UserRequest.DIFF:
                     output = output / "diff.json"
                 else:
@@ -176,37 +176,36 @@ class Prompt(Static):
         return UserInstructionsDTO(
             request=request,
             location=location_1,
-            hash_diff_files=hash_diff_files,
+            crc_diff_files=crc_diff_files,
             output=output,
         )
 
     @staticmethod
-    def overwrite_hash_confirm() -> None:
+    def overwrite_crc_confirm() -> None:
         confirmation = (
             input(
-                f"{Prompt.WARNING} Hash file already exists, "
-                "OVERWRITE? (y/n): "
+                f"{Prompt.WARNING} crc file already exists, OVERWRITE? (y/n): "
             )
             .strip()
             .lower()
         )
         if confirmation != "y":
-            debug = "Overwrite of hash file cancelled by user"
+            debug = "Overwrite of crc file cancelled by user"
             CrcutilLogger.get_logger().debug(debug)
             sys.exit(0)
 
     @staticmethod
-    def continue_hash_confirm() -> bool:
+    def continue_crc_confirm() -> bool:
         confirmation = (
             input(
-                f"{Prompt.WARNING} Incomplete Hash file already exists, "
+                f"{Prompt.WARNING} Incomplete crc file already exists, "
                 "RESUME? (y/n): "
             )
             .strip()
             .lower()
         )
         if confirmation != "y":
-            debug = "Resume of hash file cancelled by user"
+            debug = "Resume of crc file cancelled by user"
             CrcutilLogger.get_logger().debug(debug)
             return False
         else:

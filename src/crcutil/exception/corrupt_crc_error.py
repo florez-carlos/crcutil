@@ -1,0 +1,2 @@
+class CorruptCrcError(Exception):
+    pass

@@ -1,5 +1,6 @@
 # CRCUtil
-Recursively traverses a given location and generates a hash.json containing a CRC value for every encountered file/dir
+A CLI tool that recursively traverses a given location and generates a
+crc.json containing a CRC checksum value for every encountered file/dir
 
 > [!NOTE]
 > Installation is supported only for the following: 
@@ -7,14 +8,16 @@ Recursively traverses a given location and generates a hash.json containing a CR
 > - Linux
 
 > [!NOTE]
-> Development requires a fully configured [Dotfiles](https://github.com/florez-carlos/dotfiles) dev environment <br>
+> Development requires a fully configured 
+[Dotfiles](https://github.com/florez-carlos/dotfiles)
+dev environment <br>
 
 ## Table of Contents
 
 * [Installation](#installation)
   * [pip](#pip)
 * [Usage](#usage)
-  * [hash](#hash)
+  * [crc](#crc)
   * [diff](#diff)
   * [pause/resume](#pauseresume)
 * [Development](#development)
@@ -27,14 +30,15 @@ python3 -m pip install crcutil
 
 ## Usage
 
-### Hash
+### crc
 
--l The location for which to generate the hash
+-l The location for which to generate the crc
 
 ```bash
-crcutil hash -l C:\DESIRED\PATH
+crcutil crc -l 'C:\path_to_traverse' -o 'C:\path_to_output.json'
 ```
-This will generate a hash.json file in: <br >
+This will output a crc.json file in the supplied -o argument or
+if no -o argument supplied, then to the default output location: <br >
 - Windows
 ```bash
 C:\Users\<USERNAME>\Documents\crcutil\
@@ -44,15 +48,17 @@ C:\Users\<USERNAME>\Documents\crcutil\
 $HOME/crcutil
 ```
 ### Diff
-If you hold 2 hashes generated from the same directory and would like to compare the differences.
+If you hold 2 crc files generated from the same directory
+and would like to compare the differences.
 
--l The location of both hash files to compare
+-l The location of both crc files to compare
 
 ```bash
-crcutil diff -l C:\HASH_FILE_1.json C:\HASH_FILE_2.json
+crcutil diff -l 'C:\crc_1.json' 'C:\crc_2.json' -o 'C:\diff.json'
 ```
 
-This will compare both hash files and generate a diff.json in:
+This will compare both crc files and generate a diff.json in the supplied -o argument or
+if no -o argument supplied, then to the default output location: <br >
 - Windows
 ```bash
 C:\Users\<USERNAME>\Documents\crcutil\
@@ -62,10 +68,10 @@ C:\Users\<USERNAME>\Documents\crcutil\
 $HOME/crcutil
 ```
 ### Pause/Resume 
-- The program can be paused/resumed at any time by pressing p, if a CRC is being calculated for a file
-you have to wait for the calculation to complete before the program can pause.
-- If you exit the program or it crashes unexpectedly mid operation, invoke the same command and the program will continue where it left off,
-as long as the hash file is not corrupted
+- The program can be paused/resumed at any time by pressing p.
+- If you exit the program or it crashes unexpectedly mid operation, 
+invoke the same command and the program will continue where it left off,
+as long as the crc file is not corrupted
 
 ## Development
 

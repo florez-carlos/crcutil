@@ -4,7 +4,7 @@ from enum import Enum
 
 
 class UserRequest(Enum):
-    HASH = "hash"
+    CRC = "crc"
     DIFF = "diff"
 
     @staticmethod

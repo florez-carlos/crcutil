@@ -3,14 +3,14 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from crcutil.dto.hash_diff_report_dto import HashDiffReportDTO
+    from crcutil.dto.crc_diff_report_dto import CrcDiffReportDTO
 
 from crcutil.util.static import Static
 
 
-class HashDiffReportSerializer(Static):
+class CrcDiffReportSerializer(Static):
     @staticmethod
-    def to_json(dto: HashDiffReportDTO) -> dict:
+    def to_json(dto: CrcDiffReportDTO) -> dict:
         obj = {}
         changes = dto.changes
         missing_1 = dto.missing_1
@@ -22,5 +22,5 @@ class HashDiffReportSerializer(Static):
         return obj
 
     @staticmethod
-    def to_dto(hash_diff_report_dict: dict) -> HashDiffReportDTO:
+    def to_dto(crc_diff_report_dict: dict) -> CrcDiffReportDTO:
         raise NotImplementedError

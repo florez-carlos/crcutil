@@ -1,2 +1,0 @@
-class CorruptHashError(Exception):
-    pass

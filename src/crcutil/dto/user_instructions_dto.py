@@ -14,5 +14,5 @@ if TYPE_CHECKING:
 class UserInstructionsDTO:
     request: UserRequest
     location: Path
-    hash_diff_files: list[Path]
+    crc_diff_files: list[Path]
     output: Path

@@ -3,8 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from crcutil.dto.hash_diff_report_dto import HashDiffReportDTO
-    from crcutil.dto.hash_dto import HashDTO
+    from crcutil.dto.checksum_dto import ChecksumDTO
+    from crcutil.dto.crc_diff_report_dto import CrcDiffReportDTO
 
 
 import ctypes.wintypes
@@ -17,10 +17,10 @@ import toml
 
 from crcutil.dto.bootstrap_paths_dto import BootstrapPathsDTO
 from crcutil.exception.bootstrap_error import BootstrapError
-from crcutil.serializer.hash_diff_report_serializer import (
-    HashDiffReportSerializer,
+from crcutil.serializer.checksum_serializer import ChecksumSerializer
+from crcutil.serializer.crc_diff_report_serializer import (
+    CrcDiffReportSerializer,
 )
-from crcutil.serializer.hash_serializer import HashSerializer
 
 if platform.system() == "Windows":
     import win32evtlog  # pyright: ignore # noqa: PGH003
@@ -104,29 +104,31 @@ class FileImporter(Static):
         )
 
     @staticmethod
-    def save_hash(crc_path: Path, hash_dto: list[HashDTO]) -> None:
+    def save_checksums(
+        crc_path: Path, checksum_dto: list[ChecksumDTO]
+    ) -> None:
         with crc_path.open(
             "w", errors="strict", encoding=FileImporter.encoding
         ) as file:
-            hash_data = HashSerializer.to_json(hash_dto)
-            json.dump(hash_data, file, indent=4, ensure_ascii=False)
+            crc_data = ChecksumSerializer.to_json(checksum_dto)
+            json.dump(crc_data, file, indent=4, ensure_ascii=False)
 
     @staticmethod
-    def save_hash_diff_report(
-        report_path: Path, hash_diff_report_dto: HashDiffReportDTO
+    def save_crc_diff_report(
+        report_path: Path, crc_diff_report_dto: CrcDiffReportDTO
     ) -> None:
         with report_path.open(
             "w", errors="strict", encoding=FileImporter.encoding
         ) as file:
-            hash_data = HashDiffReportSerializer.to_json(hash_diff_report_dto)
-            json.dump(hash_data, file, indent=4, ensure_ascii=False)
+            crc_data = CrcDiffReportSerializer.to_json(crc_diff_report_dto)
+            json.dump(crc_data, file, indent=4, ensure_ascii=False)
 
     @staticmethod
-    def get_hash(crc_path: Path) -> list[HashDTO]:
+    def get_checksums(crc_path: Path) -> list[ChecksumDTO]:
         with crc_path.open(
             "r", errors="strict", encoding=FileImporter.encoding
         ) as file:
-            return HashSerializer.to_dto(json.load(file))
+            return ChecksumSerializer.to_dto(json.load(file))
 
     @staticmethod
     def bootstrap() -> BootstrapPathsDTO:
@@ -154,14 +156,14 @@ class FileImporter(Static):
 
             crcutil_dir = Path(home_folder) / "crcutil"
             log_dir = crcutil_dir / "log"
-            hash_file = crcutil_dir / "hash.json"
+            crc_file = crcutil_dir / "crc.json"
             report_file = crcutil_dir / "diff.json"
 
             crcutil_dir.mkdir(exist_ok=True)
             log_dir.mkdir(exist_ok=True)
 
             return BootstrapPathsDTO(
-                log_dir=log_dir, hash_file=hash_file, report_file=report_file
+                log_dir=log_dir, crc_file=crc_file, report_file=report_file
             )
 
         except Exception as e:

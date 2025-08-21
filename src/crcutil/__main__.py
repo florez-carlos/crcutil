@@ -3,10 +3,10 @@ import sys
 
 from jsonschema.exceptions import ValidationError
 
-from crcutil.core.crc import Crc
+from crcutil.core.checksum_manager import ChecksumManager
 from crcutil.core.prompt import Prompt
 from crcutil.exception.bootstrap_error import BootstrapError
-from crcutil.exception.corrupt_hash_error import CorruptHashError
+from crcutil.exception.corrupt_crc_error import CorruptCrcError
 from crcutil.exception.unexpected_argument_error import UnexpectedArgumentError
 from crcutil.exception.user_error import UserError
 from crcutil.util.crcutil_logger import CrcutilLogger
@@ -18,7 +18,7 @@ def main() -> None:
         bootstrap_paths_dto = FileImporter.bootstrap()
 
         log_dir = bootstrap_paths_dto.log_dir
-        hash_file_location = bootstrap_paths_dto.hash_file
+        crc_file_location = bootstrap_paths_dto.crc_file
         report_file_location = bootstrap_paths_dto.report_file
 
         log_config_file_path = (
@@ -35,29 +35,29 @@ def main() -> None:
         instructions_dto = Prompt.get_user_instructions_dto()
         location = instructions_dto.location
         user_request = instructions_dto.request
-        hash_diff_files = instructions_dto.hash_diff_files
-        hash_diff_dtos = []
-        if hash_diff_files:
-            hash_diff_dtos = [
-                FileImporter.get_hash(x) for x in hash_diff_files
+        crc_diff_files = instructions_dto.crc_diff_files
+        checksums_diffs = []
+        if crc_diff_files:
+            checksums_diffs = [
+                FileImporter.get_checksums(x) for x in crc_diff_files
             ]
         output = instructions_dto.output
 
         if output:
-            hash_file_location = output
+            crc_file_location = output
             report_file_location = output
 
-        crc_obj = Crc(
+        manager = ChecksumManager(
             location=location,
-            hash_file_location=hash_file_location,
+            crc_file_location=crc_file_location,
             user_request=user_request,
-            hash_diff_1=hash_diff_dtos[0] if hash_diff_dtos else [],
-            hash_diff_2=hash_diff_dtos[1] if hash_diff_dtos else [],
+            checksums_diff_1=checksums_diffs[0] if checksums_diffs else [],
+            checksums_diff_2=checksums_diffs[1] if checksums_diffs else [],
         )
-        hash_diff_report = crc_obj.do()
-        if hash_diff_report:
-            FileImporter.save_hash_diff_report(
-                report_file_location, hash_diff_report
+        crc_diff_report = manager.do()
+        if crc_diff_report:
+            FileImporter.save_crc_diff_report(
+                report_file_location, crc_diff_report
             )
 
         sys.exit(0)
@@ -87,14 +87,14 @@ def main() -> None:
         description = f"\n=====User Error=====\n{e!s}"
         CrcutilLogger.get_logger().error(description)
 
-    except CorruptHashError as e:
+    except CorruptCrcError as e:
         sys.tracebacklimit = 0
-        description = f"\n=====Corrupt Hash Error=====\n{e!s}"
+        description = f"\n=====Corrupt crc Error=====\n{e!s}"
         CrcutilLogger.get_logger().error(description)
 
     except json.decoder.JSONDecodeError as e:
         sys.tracebacklimit = 0
-        description = f"\n=====Corrupt Hash Error=====\n{e!s}"
+        description = f"\n=====Corrupt crc Error=====\n{e!s}"
         CrcutilLogger.get_logger().error(description)
 
     except ValidationError as e:
