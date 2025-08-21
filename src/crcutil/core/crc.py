@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import os
 import sys
-import zlib
 from pathlib import Path
+from time import sleep
 
 from alive_progress import alive_bar
 
+from crcutil.core.checksum import Checksum
 from crcutil.core.prompt import Prompt
 from crcutil.dto.hash_diff_report_dto import HashDiffReportDTO
 from crcutil.dto.hash_dto import HashDTO
@@ -32,6 +33,7 @@ class Crc:
         self.user_request = user_request
         self.hash_diff_1 = hash_diff_1
         self.hash_diff_2 = hash_diff_2
+        self.monitor = KeyboardMonitor()
 
     def do(self) -> HashDiffReportDTO | None:
         """
@@ -143,9 +145,7 @@ class Crc:
         str_relative_locations: list[str],
         total_count: int = 0,
     ) -> None:
-        monitor = KeyboardMonitor()
         try:
-            monitor.start()
             play_icon, pause_icon = (
                 ("▶", "⏸")
                 if sys.stdout.encoding.lower().startswith("utf")
@@ -167,26 +167,54 @@ class Crc:
                         bar()
 
                 for str_relative_location in str_relative_locations:
-                    while monitor.is_paused:
-                        bar.text = f"{pause_icon} PAUSED"
-
-                    while monitor.is_quit:
-                        sys.exit(0)
-
-                    bar.text = f"{play_icon} {str_relative_location}"
-                    relative_location = Path(str_relative_location)
                     abs_location = (
-                        parent_location / relative_location
+                        parent_location / Path(str_relative_location)
                     ).resolve()
-                    crc = self.__get_crc_hash(abs_location, parent_location)
-                    hashes = FileImporter.get_hash(self.hash_file_location)
-                    hashes.append(HashDTO(file=str_relative_location, crc=crc))
-                    FileImporter.save_hash(self.hash_file_location, hashes)
 
-                    bar()
+                    checksum = Checksum(
+                        location=abs_location, parent_location=parent_location
+                    )
+
+                    try:
+                        future = checksum.get_future()
+
+                        while True:
+                            if self.monitor.is_paused:
+                                bar.text = f"{pause_icon} PAUSED"
+                                sleep(0.500)
+                                continue
+
+                            if not self.monitor.is_paused:
+                                bar.text = (
+                                    f"{play_icon} {str_relative_location}"
+                                )
+
+                            if self.monitor.is_quit:
+                                checksum.shutdown()
+                                sys.exit(0)
+
+                            if future.done() and not self.monitor.is_paused:
+                                hashes = FileImporter.get_hash(
+                                    self.hash_file_location
+                                )
+                                hashes.append(
+                                    HashDTO(
+                                        file=str_relative_location,
+                                        crc=future.result(timeout=0.00),
+                                    )
+                                )
+                                FileImporter.save_hash(
+                                    self.hash_file_location, hashes
+                                )
+                                break
+
+                    finally:
+                        checksum.shutdown()
+                        bar()
+
         except KeyboardInterrupt:
             # Handle Ctrl+C
-            monitor.stop()
+            self.monitor.stop()
 
     def seek(
         self,
@@ -231,40 +259,3 @@ class Crc:
             status = 1
 
         return status
-
-    def __get_crc_hash(self, location: Path, parent_location: Path) -> int:
-        crc = 0
-        crc = (
-            zlib.crc32(
-                self.__get_crc_from_path(location, parent_location), crc
-            )
-            & 0xFFFFFFFF
-        )
-        crc = zlib.crc32(self.__get_crc_from_attr(location), crc) & 0xFFFFFFFF
-
-        if location.is_file():
-            crc = (
-                zlib.crc32(self.__get_crc_from_file_contents(location), crc)
-                & 0xFFFFFFFF
-            )
-
-        return crc
-
-    def __get_crc_from_path(
-        self, location: Path, parent_location: Path
-    ) -> bytes:
-        return str(location.relative_to(parent_location)).encode("utf-8")
-
-    def __get_crc_from_attr(self, location: Path) -> bytes:
-        stat = location.stat()
-        if location.is_dir():
-            return f"{stat.st_mode}".encode()
-        else:
-            return f"{stat.st_size}:{stat.st_mode}".encode()
-
-    def __get_crc_from_file_contents(self, location: Path) -> bytes:
-        file_crc = 0
-        with location.open("rb") as f:
-            for chunk in iter(lambda: f.read(4096), b""):
-                file_crc = zlib.crc32(chunk, file_crc) & 0xFFFFFFFF
-        return file_crc.to_bytes(4, "little", signed=False)
