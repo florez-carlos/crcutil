@@ -154,7 +154,7 @@ class ChecksumManager:
 
     def __write_crc(
         self,
-        parent_location: Path,
+        root_location: Path,
         str_relative_locations: list[str],
         total_count: int = 0,
     ) -> None:
@@ -182,11 +182,11 @@ class ChecksumManager:
 
                 for str_relative_location in str_relative_locations:
                     abs_location = (
-                        parent_location / Path(str_relative_location)
+                        root_location / Path(str_relative_location)
                     ).resolve()
 
                     checksum = Checksum(
-                        location=abs_location, parent_location=parent_location
+                        location=abs_location, root_location=root_location
                     )
 
                     try:

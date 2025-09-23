@@ -40,8 +40,8 @@ class KeyboardMonitor:
     def is_terminal_focused(self) -> bool:
         try:
             if platform.system() == "Windows":
-                import ctypes
-                from ctypes import (
+                import ctypes  # noqa: PLC0415
+                from ctypes import (  # noqa: PLC0415
                     windll,  # pyright: ignore[reportAttributeAccessIssue]
                 )
 
