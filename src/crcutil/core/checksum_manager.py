@@ -240,19 +240,33 @@ class ChecksumManager:
     ) -> list[str]:
         if pending_checksums is None:
             pending_checksums = []
-        raw = PathOps.walk(initial_position)
-        system_files = ["desktop.ini", "Thumbs.db", ".DS_Store"]
-        filtered = [x for x in raw if x.name not in system_files]
-        normalized = [x.relative_to(initial_position) for x in filtered]
-        sorted_normalized = sorted(normalized, key=lambda path: path.name)
-        sorted_normalized = [
-            os.fsdecode(x) for x in sorted_normalized if x != Path()
-        ]
 
-        if not pending_checksums:
-            return sorted_normalized
-        else:
-            return [x for x in sorted_normalized if x in pending_checksums]
+        paths = PathOps.walk(initial_position)
+
+        system_files = ["desktop.ini", "Thumbs.db", ".DS_Store"]
+        pending_checksums_set = set(pending_checksums)
+
+        filtered_posix_strs = []
+        for path in paths:
+            if os.fsdecode(path.name) in system_files:
+                continue
+
+            relative_path = path.relative_to(initial_position)
+
+            # Ignore the root dir (.)
+            if relative_path == Path():
+                continue
+
+            posix_path = relative_path.as_posix()
+
+            if not pending_checksums_set:
+                filtered_posix_strs.append(posix_path)
+                continue
+
+            if posix_path in pending_checksums_set:
+                filtered_posix_strs.append(posix_path)
+
+        return sorted(filtered_posix_strs)
 
     def __get_crc_status(self) -> int:
         """
