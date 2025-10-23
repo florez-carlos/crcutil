@@ -52,10 +52,6 @@ class Checksum:
             )
             & 0xFFFFFFFF
         )
-        checksum = (
-            zlib.crc32(self.__get_checksum_from_attr(self.location), checksum)
-            & 0xFFFFFFFF
-        )
 
         if self.location.is_file():
             checksum = (
@@ -88,28 +84,6 @@ class Checksum:
             Returns -> b'b/c'
         """
         return str(location.relative_to(root_location)).encode("utf-8")
-
-    def __get_checksum_from_attr(self, location: Path) -> bytes:
-        """
-        Helper method to __get_checksum().
-
-        Args:
-            location (pathlib.Path): The path to evaluate
-
-        Returns:
-            bytes: of the str representation
-            of st_mode (file type/permission)
-            and additionally st_size if file is NOT a dir.
-
-            Example:
-            - location: a.py (file)
-            Returns -> b'111:111'
-        """
-        stat = location.stat()
-        if location.is_dir():
-            return f"{stat.st_mode}".encode()
-        else:
-            return f"{stat.st_size}:{stat.st_mode}".encode()
 
     def __get_checksum_from_file_contents(self, location: Path) -> bytes:
         """
