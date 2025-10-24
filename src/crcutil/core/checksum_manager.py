@@ -193,6 +193,12 @@ class ChecksumManager:
                         future = checksum.get_future()
 
                         while True:
+                            if self.monitor.is_quit:
+                                CrcutilLogger.get_console_logger().info(
+                                    f"{cancel_icon} Quitting..."
+                                )
+                                sys.exit(0)
+
                             if self.monitor.is_paused:
                                 bar.text = f"{pause_icon} PAUSED"
                                 sleep(0.500)
@@ -217,12 +223,6 @@ class ChecksumManager:
                                     )
                                     bar()
                                     break
-
-                            if self.monitor.is_quit:
-                                CrcutilLogger.get_console_logger().info(
-                                    f"{cancel_icon} Quitting..."
-                                )
-                                sys.exit(0)
 
                     finally:
                         checksum.shutdown()
