@@ -33,7 +33,7 @@ class Checksum:
         return self.future
 
     def shutdown(self) -> None:
-        self.executor.shutdown(wait=False)
+        self.executor.shutdown(wait=False, cancel_futures=True)
 
     def __get_checksum(self) -> int:
         """

@@ -13,9 +13,10 @@ from crcutil.dto.checksum_dto import ChecksumDTO
 from crcutil.dto.crc_diff_report_dto import CrcDiffReportDTO
 from crcutil.enums.user_request import UserRequest
 from crcutil.exception.corrupt_crc_error import CorruptCrcError
+from crcutil.exception.device_error import DeviceError
 from crcutil.util.crcutil_logger import CrcutilLogger
 from crcutil.util.file_importer import FileImporter
-from crcutil.util.keyboard_monitor import KeyboardMonitor
+from crcutil.util.keyboard_monitor_factory import KeyboardMonitorFactory
 from crcutil.util.path_ops import PathOps
 
 
@@ -33,7 +34,6 @@ class ChecksumManager:
         self.user_request = user_request
         self.checksums_diff_1 = checksums_diff_1
         self.checksums_diff_2 = checksums_diff_2
-        self.monitor = KeyboardMonitor()
 
     def do(self) -> CrcDiffReportDTO | None:
         """
@@ -158,6 +158,7 @@ class ChecksumManager:
         str_relative_locations: list[str],
         total_count: int = 0,
     ) -> None:
+        monitor = None
         try:
             play_icon, pause_icon, cancel_icon = (
                 ("▶", "⏸", "✖")
@@ -165,12 +166,22 @@ class ChecksumManager:
                 else (">", "||", "X")
             )
 
-            pause_description = "\n*Press p to pause/resume"
-            quit_description = "*Press q to quit"
-            CrcutilLogger.get_console_logger().info(pause_description)
-            CrcutilLogger.get_console_logger().info(quit_description)
+            try:
+                monitor = KeyboardMonitorFactory.get()
 
-            self.monitor.start()
+                CrcutilLogger.get_console_logger().info(
+                    monitor.get_pause_message()
+                )
+                CrcutilLogger.get_console_logger().info(
+                    monitor.get_quit_message()
+                )
+
+                monitor.start()
+
+            except DeviceError as e:
+                description = f"Playback controls disabled: {e}"
+                CrcutilLogger.get_console_logger().warning(description)
+
             length = (
                 total_count if total_count else len(str_relative_locations)
             )
@@ -191,47 +202,49 @@ class ChecksumManager:
 
                     try:
                         future = checksum.get_future()
-
                         while True:
-                            if self.monitor.is_quit:
-                                CrcutilLogger.get_console_logger().info(
-                                    f"{cancel_icon} Quitting..."
-                                )
-                                sys.exit(0)
+                            sleep(0.3)
 
-                            if self.monitor.is_paused:
-                                bar.text = f"{pause_icon} PAUSED"
-                                sleep(0.500)
+                            if monitor is not None:
+                                if monitor.is_listen_quit():
+                                    CrcutilLogger.get_console_logger().info(
+                                        f"{cancel_icon} Quitting..."
+                                    )
+                                    sys.exit(0)
 
-                            if not self.monitor.is_paused:
-                                bar.text = (
-                                    f"{play_icon} {str_relative_location}"
+                                if monitor.is_listen_paused():
+                                    bar.text = f"{pause_icon} PAUSED"
+                                    continue
+
+                                if not monitor.is_listen_paused():
+                                    bar.text = (
+                                        f"{play_icon} {str_relative_location}"
+                                    )
+                            else:
+                                bar.text = f"{str_relative_location}"
+
+                            if future.done():
+                                checksums = FileImporter.get_checksums(
+                                    self.crc_file_location
                                 )
-                                sleep(0.500)
-                                if future.done():
-                                    checksums = FileImporter.get_checksums(
-                                        self.crc_file_location
+                                checksums.append(
+                                    ChecksumDTO(
+                                        file=str_relative_location,
+                                        crc=future.result(timeout=0.00),
                                     )
-                                    checksums.append(
-                                        ChecksumDTO(
-                                            file=str_relative_location,
-                                            crc=future.result(timeout=0.00),
-                                        )
-                                    )
-                                    FileImporter.save_checksums(
-                                        self.crc_file_location, checksums
-                                    )
-                                    bar()
-                                    break
+                                )
+                                FileImporter.save_checksums(
+                                    self.crc_file_location, checksums
+                                )
+                                bar()
+                                break
 
                     finally:
                         checksum.shutdown()
 
-        except KeyboardInterrupt:
-            # Handle Ctrl+C
-            self.monitor.stop()
         finally:
-            self.monitor.stop()
+            if monitor:
+                monitor.stop()
 
     def seek(
         self,
