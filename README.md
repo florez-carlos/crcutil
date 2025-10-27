@@ -4,8 +4,10 @@ crc.json containing a CRC checksum value for every encountered file/dir
 
 > [!NOTE]
 > Installation is supported only for the following: 
-> - Windows
-> - Linux
+> - Windows (amd64)
+> - Linux (amd64)
+>    - X11
+>    - Wayland
 
 > [!NOTE]
 > Development requires a fully configured 
@@ -25,19 +27,30 @@ dev environment <br>
 > [!NOTE]
 > - Requires Python 3.12+<br >
 > - Requires pip
-
-- Windows
+### Windows
 ```bash
 pip install crcutil
 ```
-- Linux
+### Linux (X11)
 ```bash
 python3 -m pip install crcutil
+```
+
+### Linux (Wayland)
+> [!NOTE]
+> - This will add your user to the <i>input</i> group and immediately log out.
+> - This makes it possible in Wayland to track keyboard presses for the playback controls
+```bash
+python3 -m pip install crcutil
+sudo usermod -aG input $USER
+sudo pkill -p $USER
 ```
 
 ## Usage
 
 ### crc
+
+Generate CRC32 checksums
 
 ```bash
 crcutil crc -l 'C:\path_to_traverse' -o 'C:\path_to_output.json'
@@ -53,6 +66,7 @@ C:\Users\<USERNAME>\Documents\crcutil\
 ```bash
 $HOME/crcutil
 ```
+-----
 ### diff
 If you hold 2 crc files generated from the same directory
 and would like to compare the differences.
@@ -72,8 +86,18 @@ C:\Users\<USERNAME>\Documents\crcutil\
 $HOME/crcutil
 ```
 ### Pause/Resume 
-- The tool can be paused/resumed at any time by pressing p.
-- The tool can be exited at any time by pressing q (will continue where left off if you invoke the same command).
+- The tool can be paused/resumed at any time by pressing:
+    - p
+        - Windows
+        - Linux (X11)
+    - alt+p
+        - Linux (Wayland)
+- The tool can be exited at any time (will continue where left off if you invoke the same command) by pressing:
+    - q
+        - Windows
+        - Linux (X11)
+    - alt+p
+        - Linux (Wayland)
 
 ## Development
 
