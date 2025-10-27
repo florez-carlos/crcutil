@@ -8,6 +8,7 @@ from time import sleep
 from alive_progress import alive_bar
 
 from crcutil.core.checksum import Checksum
+from crcutil.core.keyboard_monitor_factory import KeyboardMonitorFactory
 from crcutil.core.prompt import Prompt
 from crcutil.dto.checksum_dto import ChecksumDTO
 from crcutil.dto.crc_diff_report_dto import CrcDiffReportDTO
@@ -16,7 +17,6 @@ from crcutil.exception.corrupt_crc_error import CorruptCrcError
 from crcutil.exception.device_error import DeviceError
 from crcutil.util.crcutil_logger import CrcutilLogger
 from crcutil.util.file_importer import FileImporter
-from crcutil.util.keyboard_monitor_factory import KeyboardMonitorFactory
 from crcutil.util.path_ops import PathOps
 
 

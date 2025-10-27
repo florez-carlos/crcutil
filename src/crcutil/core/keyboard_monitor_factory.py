@@ -1,11 +1,11 @@
 import os
 import platform
 
+from crcutil.core.keyboard_monitor import KeyboardMonitor
+from crcutil.core.keyboard_monitor_wayland import KeyboardMonitorWayland
+from crcutil.core.keyboard_monitor_windows import KeyboardMonitorWindows
+from crcutil.core.keyboard_monitor_x11 import KeyboardMonitorX11
 from crcutil.exception.device_error import DeviceError
-from crcutil.util.keyboard_monitor import KeyboardMonitor
-from crcutil.util.keyboard_monitor_wayland import KeyboardMonitorWayland
-from crcutil.util.keyboard_monitor_windows import KeyboardMonitorWindows
-from crcutil.util.keyboard_monitor_x11 import KeyboardMonitorX11
 from crcutil.util.static import Static
 
 

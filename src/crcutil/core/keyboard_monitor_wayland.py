@@ -2,8 +2,8 @@ import threading
 
 from evdev import InputDevice, list_devices
 
+from crcutil.core.keyboard_monitor import KeyboardMonitor
 from crcutil.exception.device_error import DeviceError
-from crcutil.util.keyboard_monitor import KeyboardMonitor
 
 LEFT_ALT = 56
 RIGHT_ALT = 100
