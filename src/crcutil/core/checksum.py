@@ -5,7 +5,7 @@ from pathlib import Path
 
 from crcutil.util.crcutil_logger import CrcutilLogger
 
-CHUNK_SIZE = 64 * 1024
+CHUNK_SIZE = 4096 * 1024
 
 
 class Checksum:
@@ -87,7 +87,9 @@ class Checksum:
             - location: a/b/c
             Returns -> b'b/c'
         """
-        return str(location.relative_to(root_location)).encode("utf-8")
+        return str(location.relative_to(root_location).as_posix()).encode(
+            "utf-8"
+        )
 
     def __get_checksum_from_file_contents(self, location: Path) -> bytes:
         """
@@ -108,7 +110,32 @@ class Checksum:
             bytes: 4-byte little-endian representation of the CRC32 checksum
         """
         file_checksum = 0
+        is_text_file = self.__is_likely_text_file(location)
 
+        if is_text_file:
+            try:
+                with location.open("r", encoding="utf-8") as f:
+                    content = f.read().replace("\r\n", "\n")
+                content_bytes = content.encode("utf-8")
+                file_checksum = zlib.crc32(content_bytes) & 0xFFFFFFFF
+                return file_checksum.to_bytes(4, "little", signed=False)
+            except UnicodeDecodeError:
+                description = (
+                    f"Understood as text file: {location!s} "
+                    "but encountered decoding error. Proceeding w/ binary"
+                )
+                CrcutilLogger.get_logger().debug(description)
+
+        with location.open("rb") as f:
+            for chunk in iter(lambda: f.read(CHUNK_SIZE), b""):
+                file_checksum = zlib.crc32(chunk, file_checksum) & 0xFFFFFFFF
+
+        return file_checksum.to_bytes(4, "little", signed=False)
+
+    def __is_likely_text_file(self, location: Path) -> bool:
+        """
+        Check if a file is likely to be text by sampling the beginning.
+        """
         # Known text extensions to consider for line ending normalization
         text_extensions = {
             ".txt",
@@ -148,44 +175,17 @@ class Checksum:
             ".cmd",
             ".log",
         }
-
         extension = location.suffix.lower()
-        is_text_file = self.__is_likely_text_file(location)
-
-        if extension in text_extensions and is_text_file:
-            try:
-                with location.open("r", encoding="utf-8") as f:
-                    content = f.read().replace("\r\n", "\n")
-                content_bytes = content.encode("utf-8")
-                file_checksum = zlib.crc32(content_bytes) & 0xFFFFFFFF
-                return file_checksum.to_bytes(4, "little", signed=False)
-            except UnicodeDecodeError:
-                description = (
-                    f"Understood as text file: {location!s} "
-                    "but encountered decoding error. Proceeding w/ binary"
-                )
-                CrcutilLogger.get_logger().debug(description)
-
-        with location.open("rb") as f:
-            for chunk in iter(lambda: f.read(CHUNK_SIZE), b""):
-                file_checksum = zlib.crc32(chunk, file_checksum) & 0xFFFFFFFF
-
-        return file_checksum.to_bytes(4, "little", signed=False)
-
-    def __is_likely_text_file(self, location: Path) -> bool:
-        """
-        Check if a file is likely to be text by sampling the beginning.
-        """
         # Only read a sample
         with location.open("rb") as f:
-            sample = f.read(CHUNK_SIZE)
+            sample = f.read(8192)
 
         # Empty file, treat as empty text
-        if not sample:
+        if not sample and extension in text_extensions:
             return True
 
         # Null byte presence, likely a binary file
-        if b"\0" in sample:
+        if b"\0" in sample and extension not in text_extensions:
             return False
 
         ascii_lower_range = 32
