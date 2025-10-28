@@ -3,6 +3,10 @@ import zlib
 from collections.abc import Callable
 from pathlib import Path
 
+from crcutil.util.crcutil_logger import CrcutilLogger
+
+CHUNK_SIZE = 64 * 1024
+
 
 class Checksum:
     def __init__(self, location: Path, root_location: Path) -> None:
@@ -95,6 +99,8 @@ class Checksum:
         and updating the CRC32 value incrementally. The result is
         masked to ensure it's treated as an unsigned 32-bit integer.
 
+        Text files with dos line endings are normalized to unix
+
         Args:
             location (pathlib.Path): The path to evaluate
 
@@ -102,7 +108,96 @@ class Checksum:
             bytes: 4-byte little-endian representation of the CRC32 checksum
         """
         file_checksum = 0
+
+        # Known text extensions to consider for line ending normalization
+        text_extensions = {
+            ".txt",
+            ".md",
+            ".rst",
+            ".html",
+            ".htm",
+            ".xml",
+            ".json",
+            ".yaml",
+            ".yml",
+            ".csv",
+            ".tsv",
+            ".ini",
+            ".cfg",
+            ".conf",
+            ".py",
+            ".js",
+            ".java",
+            ".c",
+            ".cpp",
+            ".h",
+            ".hpp",
+            ".php",
+            ".rb",
+            ".go",
+            ".rs",
+            ".ts",
+            ".css",
+            ".scss",
+            ".sql",
+            ".sh",
+            ".bash",
+            ".zsh",
+            ".ps1",
+            ".bat",
+            ".cmd",
+            ".log",
+        }
+
+        extension = location.suffix.lower()
+        is_text_file = self.__is_likely_text_file(location)
+
+        if extension in text_extensions and is_text_file:
+            try:
+                with location.open("r", encoding="utf-8") as f:
+                    content = f.read().replace("\r\n", "\n")
+                content_bytes = content.encode("utf-8")
+                file_checksum = zlib.crc32(content_bytes) & 0xFFFFFFFF
+                return file_checksum.to_bytes(4, "little", signed=False)
+            except UnicodeDecodeError:
+                description = (
+                    f"Understood as text file: {location!s} "
+                    "but encountered decoding error. Proceeding w/ binary"
+                )
+                CrcutilLogger.get_logger().debug(description)
+
         with location.open("rb") as f:
-            for chunk in iter(lambda: f.read(4096), b""):
+            for chunk in iter(lambda: f.read(CHUNK_SIZE), b""):
                 file_checksum = zlib.crc32(chunk, file_checksum) & 0xFFFFFFFF
+
         return file_checksum.to_bytes(4, "little", signed=False)
+
+    def __is_likely_text_file(self, location: Path) -> bool:
+        """
+        Check if a file is likely to be text by sampling the beginning.
+        """
+        # Only read a sample
+        with location.open("rb") as f:
+            sample = f.read(CHUNK_SIZE)
+
+        # Empty file, treat as empty text
+        if not sample:
+            return True
+
+        # Null byte presence, likely a binary file
+        if b"\0" in sample:
+            return False
+
+        ascii_lower_range = 32
+        ascii_upper_range = 126
+        tab = 9
+        line_feed = 10
+        carriage_return = 13
+        printable_count = sum(
+            1
+            for byte in sample
+            if ascii_lower_range <= byte <= ascii_upper_range
+            or byte in (tab, line_feed, carriage_return)
+        )
+        printable_character_treshold = 0.8
+        return (printable_count / len(sample)) > printable_character_treshold
