@@ -20,16 +20,17 @@ class KeyboardMonitorFactory(Static):
         elif system == "Linux":
             session = os.getenv("XDG_SESSION_TYPE") or ""
 
-            from crcutil.core.keyboard_monitor_wayland import (  # noqa:PLC0415
-                KeyboardMonitorWayland,
-            )
-            from crcutil.core.keyboard_monitor_x11 import (  # noqa:PLC0415
-                KeyboardMonitorX11,
-            )
-
             if session.startswith("wayland"):
+                from crcutil.core.keyboard_monitor_wayland import (  # noqa:PLC0415
+                    KeyboardMonitorWayland,
+                )
+
                 return KeyboardMonitorWayland()
             if session.startswith("x11"):
+                from crcutil.core.keyboard_monitor_x11 import (  # noqa:PLC0415
+                    KeyboardMonitorX11,
+                )
+
                 return KeyboardMonitorX11()
             else:
                 description = f"Could not determine Linux session: {session}"
