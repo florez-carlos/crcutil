@@ -43,7 +43,7 @@ python3 -m pip install crcutil
 ```bash
 python3 -m pip install crcutil
 sudo usermod -aG input $USER
-sudo pkill -p $USER
+sudo pkill -u $USER
 ```
 
 ## Usage
