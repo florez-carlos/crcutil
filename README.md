@@ -1,6 +1,5 @@
 # CRCUtil
-A CLI tool that recursively traverses a given location and generates a
-crc.json containing a CRC checksum value for every encountered file/dir
+Portable CRC32 Checksum Tool – Generate & Compare
 
 > [!NOTE]
 > Installation is supported only for the following: 
@@ -9,10 +8,6 @@ crc.json containing a CRC checksum value for every encountered file/dir
 >    - X11
 >    - Wayland
 
-> [!NOTE]
-> Development requires a fully configured 
-[Dotfiles](https://github.com/florez-carlos/dotfiles)
-dev environment <br>
 
 ## Table of Contents
 
@@ -25,23 +20,18 @@ dev environment <br>
 
 ## Installation
 > [!NOTE]
-> - Requires Python 3.12+<br >
-> - Requires pip
-### Windows
+> - Requires Python 3.11+<br >
+### Windows & Linux (X11)
 ```bash
 pip install crcutil
 ```
-### Linux (X11)
-```bash
-python3 -m pip install crcutil
-```
 
 ### Linux (Wayland)
-> [!NOTE]
-> - This will add your user to the <i>input</i> group and immediately log out.
-> - This makes it possible in Wayland to track keyboard presses for the playback controls
+> [!CAUTION]
+> - This will add your user to the <i>input</i> group and immediately log you out.
+> - This makes it possible in Wayland to track keyboard presses; necessary for the playback controls
 ```bash
-python3 -m pip install crcutil
+pip install crcutil
 sudo usermod -aG input $USER
 sudo pkill -u $USER
 ```
@@ -51,52 +41,44 @@ sudo pkill -u $USER
 ### crc
 
 Generate CRC32 checksums
-
+> [!NOTE]
+> - This will output a crc.json file in the supplied -o argument.
+> - If no -o supplied a crc.json is created in the current directory.
+> - If a crc.json already exists in the current directory, a crc2.json is created.
 ```bash
 crcutil crc -l 'C:\path_to_traverse' -o 'C:\path_to_output.json'
 ```
-> [!NOTE]
-> This will output a crc.json file in the supplied -o argument.<br >
-> If no -o argument is supplied, then the default output location is: <br >
-- Windows
-```bash
-C:\Users\<USERNAME>\Documents\crcutil\
-```
-- Linux
-```bash
-$HOME/crcutil
-```
 -----
 ### diff
-If you hold 2 crc files generated from the same directory
-and would like to compare the differences.
+Diff output can be generated from 2 separate crc files
+> [!NOTE]
+> - This will compare both crc files and output a diff.json in the supplied -o argument.<br >
+> - If no -o supplied a diff.json is created in the current directory.
 
 ```bash
 crcutil diff -l 'C:\crc_1.json' 'C:\crc_2.json' -o 'C:\diff.json'
 ```
-> [!NOTE]
-> This will compare both crc files and output a diff.json in the supplied -o argument.<br >
-> If no -o argument is supplied, then the default output location is: <br >
-- Windows
-```bash
-C:\Users\<USERNAME>\Documents\crcutil\
-```
-- Linux
-```bash
-$HOME/crcutil
-```
+---
+
 ### Pause/Resume 
+> [!CAUTION]
+> The crc can only be resumed as long as the contents/structure of the traversed location have not changed
+
+> [!NOTE]
+> To resume a crc after exiting, pass the location of the existing crc to the -o flag<br >
+> i.e: ```crcutil crc -l 'C:\path_to_traverse' -o 'C:\existing_crc.json'```
+
 - The tool can be paused/resumed at any time by pressing:
     - p
         - Windows
         - Linux (X11)
     - alt+p
         - Linux (Wayland)
-- The tool can be exited at any time (will continue where left off if you invoke the same command) by pressing:
+- The tool can be exited at any time by pressing:
     - q
         - Windows
         - Linux (X11)
-    - alt+p
+    - alt+q
         - Linux (Wayland)
 
 ## Development
