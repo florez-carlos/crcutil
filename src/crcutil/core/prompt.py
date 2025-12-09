@@ -181,31 +181,33 @@ class Prompt(Static):
         )
 
     @staticmethod
-    def overwrite_crc_confirm() -> None:
+    def overwrite_crc_confirm(crc_file: pathlib.Path) -> None:
         confirmation = (
             input(
-                f"{Prompt.WARNING} crc file already exists, OVERWRITE? (y/n): "
+                f"{Prompt.WARNING} crc ({crc_file!s}) already exists, "
+                "OVERWRITE? (y/n): "
             )
             .strip()
             .lower()
         )
         if confirmation != "y":
-            debug = "Overwrite of crc file cancelled by user"
+            debug = f"Overwrite of crc ({crc_file!s}) cancelled by user"
             CrcutilLogger.get_logger().debug(debug)
             sys.exit(0)
 
     @staticmethod
-    def continue_crc_confirm() -> bool:
+    def continue_crc_confirm(crc_file: pathlib.Path) -> bool:
         confirmation = (
             input(
-                f"{Prompt.WARNING} Incomplete crc file already exists, "
+                f"{Prompt.WARNING} Incomplete crc"
+                f"({crc_file!s}) already exists, "
                 "RESUME? (y/n): "
             )
             .strip()
             .lower()
         )
         if confirmation != "y":
-            debug = "Resume of crc file cancelled by user"
+            debug = f"Resume of crc ({crc_file!s}) cancelled by user"
             CrcutilLogger.get_logger().debug(debug)
             return False
         else:

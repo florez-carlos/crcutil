@@ -18,17 +18,11 @@ def main() -> None:
         bootstrap_paths_dto = FileImporter.bootstrap()
 
         log_dir = bootstrap_paths_dto.log_dir
+        log_config_file_location = bootstrap_paths_dto.log_config_file
         crc_file_location = bootstrap_paths_dto.crc_file
         report_file_location = bootstrap_paths_dto.report_file
 
-        log_config_file_path = (
-            FileImporter.get_project_root()
-            / "crcutil"
-            / "config"
-            / "log_config.yaml"
-        )
-
-        log_config = FileImporter.get_logging_config(log_config_file_path)
+        log_config = FileImporter.get_logging_config(log_config_file_location)
 
         CrcutilLogger(log_dir, log_config)
 
@@ -104,6 +98,7 @@ def main() -> None:
 
     # No regular logger can be expected to be initialized
     except BootstrapError as e:
+        sys.tracebacklimit = 0
         description = f"\n=====Program Initialization Error=====\n{e!s}"
         e.args = (description,)
         raise

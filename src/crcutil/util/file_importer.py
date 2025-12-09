@@ -11,6 +11,7 @@ import ctypes.wintypes
 import json
 import os
 import platform
+import syslog
 from pathlib import Path
 
 import toml
@@ -202,25 +203,43 @@ class FileImporter(Static):
 
             crcutil_dir = Path(home_folder) / "crcutil"
             log_dir = crcutil_dir / "log"
-            crc_file = crcutil_dir / "crc.json"
-            report_file = crcutil_dir / "diff.json"
+            crc_file = Path().cwd() / "crc.json"
+            report_file = Path().cwd() / "diff.json"
+
+            if crc_file.exists():
+                crc_file = Path().cwd() / "crc2.json"
+
+            log_config_file = (
+                FileImporter.get_project_root()
+                / "crcutil"
+                / "config"
+                / "log_config.yaml"
+            )
 
             crcutil_dir.mkdir(exist_ok=True)
             log_dir.mkdir(exist_ok=True)
 
             return BootstrapPathsDTO(
-                log_dir=log_dir, crc_file=crc_file, report_file=report_file
+                log_dir=log_dir,
+                log_config_file=log_config_file,
+                crc_file=crc_file,
+                report_file=report_file,
             )
 
         except Exception as e:
+            description = e.args[0] if e.args and len(e.args) >= 0 else ""
             if platform.system == "Windows":
                 win32evtlogutil.ReportEvent(  # pyright: ignore # noqa: PGH003
                     "plexutil",
                     eventID=1,
                     eventType=win32evtlog.EVENTLOG_ERROR_TYPE,  # pyright: ignore # noqa: PGH003
-                    strings=[""],
+                    strings=[description],
                 )
+            elif platform.system() == "Linux":
+                syslog.syslog(syslog.LOG_ERR, f"[CRCUTIL]: {description}")
+
             if e.args and len(e.args) >= 0:
                 raise BootstrapError(e.args[0]) from e
-
-            raise BootstrapError from e
+            else:
+                description = "Unknown initialization error"
+                raise BootstrapError(description) from e

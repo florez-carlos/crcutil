@@ -6,5 +6,6 @@ from pathlib import Path
 @dataclass(frozen=True)
 class BootstrapPathsDTO:
     log_dir: Path
+    log_config_file: Path
     crc_file: Path
     report_file: Path

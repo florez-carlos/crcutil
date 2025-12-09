@@ -90,7 +90,7 @@ class ChecksumManager:
 
     def __create_crc(self, is_crc_overwrite: bool = False) -> None:
         if is_crc_overwrite:
-            Prompt.overwrite_crc_confirm()
+            Prompt.overwrite_crc_confirm(self.crc_file_location)
 
         self.crc_file_location.write_text("{}")
 
@@ -102,8 +102,8 @@ class ChecksumManager:
         self.__write_crc(self.location, all_locations)
 
     def __continue_crc(self) -> None:
-        if not Prompt.continue_crc_confirm():
-            Prompt.overwrite_crc_confirm()
+        if not Prompt.continue_crc_confirm(self.crc_file_location):
+            Prompt.overwrite_crc_confirm(self.crc_file_location)
             self.__create_crc()
             return
 
