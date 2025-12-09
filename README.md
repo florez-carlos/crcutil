@@ -1,6 +1,12 @@
 # CRCUtil
 Portable CRC32 Checksum Tool – Generate & Compare
 
+![PyPI Version](https://img.shields.io/pypi/v/crcutil)
+![Python](https://img.shields.io/badge/Python-3.11+-blue)
+![Platform](https://img.shields.io/badge/Platform-Cross--Platform-success)
+![PyPI Status](https://img.shields.io/pypi/status/crcutil)
+![CLI](https://img.shields.io/badge/Interface-CLI-important)
+
 > [!NOTE]
 > Installation is supported only for the following: 
 > - Windows (amd64)
