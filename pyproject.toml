@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "crcutil"
-version = "2.0.5"
-requires-python = ">=3.12.10"
+version = "2.0.6"
+requires-python = ">=3.11"
 authors = [
   {name = "Carlos Florez", email = "carlos@florez.co.uk"}
 ]
@@ -18,15 +18,16 @@ license = {file = "LICENSE"}
 classifiers = [
   "Development Status :: 5 - Production/Stable",
   "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.11",
 ]
 dependencies = [
-  "alive-progress==3.1.5",
-  "pyyaml==6.0.1",
+  "alive-progress==3.3.0",
+  "pyyaml==6.0.3",
   "toml==0.10.2",
-  "pywin32==306;sys_platform == 'win32'",
-  "jsonschema==4.23.0",
-  "colorlog==6.4.0",
-  "pynput==1.7.7",
+  "pywin32==311;sys_platform == 'win32'",
+  "jsonschema==4.25.1",
+  "colorlog==6.10.1",
+  "pynput==1.8.1",
   "python-xlib==0.33",
   "evdev==1.9.2;sys_platform == 'linux'",
 ]
