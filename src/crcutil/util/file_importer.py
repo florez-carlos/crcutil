@@ -99,6 +99,12 @@ class FileImporter(Static):
 
     @staticmethod
     def get_pyproject() -> dict:
+        """
+        Gets the project's pyproject.toml file
+
+        Returns:
+            pathlib.Path: The project's pyproject.toml file
+        """
         return toml.load(
             FileImporter.get_project_root().parent / "pyproject.toml"
         )
@@ -107,6 +113,16 @@ class FileImporter(Static):
     def save_checksums(
         crc_path: Path, checksum_dto: list[ChecksumDTO]
     ) -> None:
+        """
+        Saves the provided checksums to a CRC file
+
+        Args:
+            crc_path (pathlib.Path): CRC file to save checksums to
+            checksum_dto (list[ChecksumDTO]): The checksums to save
+
+        Returns:
+            None: This method does not return a value.
+        """
         with crc_path.open(
             "w", errors="strict", encoding=FileImporter.encoding
         ) as file:
@@ -117,6 +133,16 @@ class FileImporter(Static):
     def save_crc_diff_report(
         report_path: Path, crc_diff_report_dto: CrcDiffReportDTO
     ) -> None:
+        """
+        Saves a CRC diff file
+
+        Args:
+            report_path (pathlib.Path): diff file
+            crc_diff_report_dto (list[CrcDiffReportDTO]): diff report
+
+        Returns:
+            None: This method does not return a value.
+        """
         with report_path.open(
             "w", errors="strict", encoding=FileImporter.encoding
         ) as file:
@@ -125,6 +151,15 @@ class FileImporter(Static):
 
     @staticmethod
     def get_checksums(crc_path: Path) -> list[ChecksumDTO]:
+        """
+        Loads checksums from a CRC file
+
+        Args:
+            crc_path (pathlib.Path): CRC file to load checksums from
+
+        Returns:
+            list[ChecksumDTO]: Checksums loaded from the CRC file
+        """
         with crc_path.open(
             "r", errors="strict", encoding=FileImporter.encoding
         ) as file:
@@ -132,6 +167,17 @@ class FileImporter(Static):
 
     @staticmethod
     def bootstrap() -> BootstrapPathsDTO:
+        """
+        Initializes the config/logging module
+        Logs any errors to syslog
+
+        Returns:
+            BootstrapPathsDTO: Contains config/logging paths
+
+        Raises:
+            BootstrapError: If unable to setup config/logging module
+            OSError: If OS other than Windows/Linux detected
+        """
         try:
             home_folder = Path()
             system = platform.system()
