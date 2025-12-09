@@ -9,6 +9,14 @@ from crcutil.util.static import Static
 class KeyboardMonitorFactory(Static):
     @staticmethod
     def get() -> KeyboardMonitor:
+        """
+        Gets a KeyboardMonitor compatible with the current system/session
+
+        Returns:
+            KeyboardMonitor: An appropriate monitor to the system/session
+        Raises:
+            DeviceError: If not a graphical session or system not Windows/Linux
+        """
         system = platform.system()
 
         if system == "Windows":
@@ -33,9 +41,9 @@ class KeyboardMonitorFactory(Static):
 
                 return KeyboardMonitorX11()
             else:
-                description = f"Could not determine Linux session: {session}"
+                description = f"Not a graphical session: {session}"
                 raise DeviceError(description)
 
         else:
-            description = f"Could not determine system: {system}"
+            description = f"Unsupported system: {system}"
             raise DeviceError(description)
