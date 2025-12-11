@@ -97,7 +97,7 @@ class Checksum:
         Returns bytes from the str representation
         of the file's CRC32 checksum.
 
-        The checksum is calculated by reading the file in 4KB chunks
+        The checksum is calculated by reading the file
         and updating the CRC32 value incrementally. The result is
         masked to ensure it's treated as an unsigned 32-bit integer.
 

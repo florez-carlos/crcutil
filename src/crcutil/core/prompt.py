@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 import argparse
-import pathlib
 import sys
 from argparse import RawTextHelpFormatter
 from importlib.metadata import PackageNotFoundError, version
+from pathlib import Path
 
 from crcutil.dto.user_instructions_dto import UserInstructionsDTO
 from crcutil.enums.user_request import UserRequest
@@ -48,7 +48,7 @@ class Prompt(Static):
             "-l",
             "--location",
             metavar="location",
-            type=pathlib.Path,
+            type=Path,
             nargs="*",
             help=(
                 "Path to read, or if requesting diff, "
@@ -61,7 +61,7 @@ class Prompt(Static):
             "-o",
             "--output",
             metavar="output",
-            type=pathlib.Path,
+            type=Path,
             nargs="?",
             help=(
                 "Path to store the crc or diff file"
@@ -104,8 +104,8 @@ class Prompt(Static):
         request = UserRequest.get_user_request_from_str(request)
 
         location = args.location
-        location_1 = pathlib.Path()
-        location_2 = pathlib.Path()
+        location_1 = Path()
+        location_2 = Path()
         crc_diff_files = []
         if args.location:
             if (
@@ -137,11 +137,20 @@ class Prompt(Static):
                 )
                 raise UserError(description)
         elif not args.location and request is UserRequest.DIFF:
-            description = (
-                "Expected 2 crc files but got: 0\n"
-                "Example: crcutil diff -l path_to_crc_1 path_to_crc_2"
-            )
-            raise UserError(description)
+            if Path("crc.json").exists() and Path("crc2.json").exists():
+                location_1 = FileImporter.get_path_from_str(
+                    "crc.json"
+                ).resolve()
+                location_2 = FileImporter.get_path_from_str(
+                    "crc2.json"
+                ).resolve()
+                crc_diff_files = [location_1, location_2]
+            else:
+                description = (
+                    "Expected 2 crc files but got: 0\n"
+                    "Example: crcutil diff -l path_to_crc_1 path_to_crc_2"
+                )
+                raise UserError(description)
         else:
             description = (
                 "Expected a location but none supplied\n"
@@ -181,7 +190,7 @@ class Prompt(Static):
         )
 
     @staticmethod
-    def overwrite_crc_confirm(crc_file: pathlib.Path) -> None:
+    def overwrite_crc_confirm(crc_file: Path) -> None:
         confirmation = (
             input(
                 f"{Prompt.WARNING} crc ({crc_file!s}) already exists, "
@@ -196,7 +205,7 @@ class Prompt(Static):
             sys.exit(0)
 
     @staticmethod
-    def continue_crc_confirm(crc_file: pathlib.Path) -> bool:
+    def continue_crc_confirm(crc_file: Path) -> bool:
         confirmation = (
             input(
                 f"{Prompt.WARNING} Incomplete crc"

@@ -60,9 +60,10 @@ Diff output can be generated from 2 separate crc files
 > [!NOTE]
 > - This will compare both crc files and output a diff.json in the supplied -o argument.<br >
 > - If no -o supplied a diff.json is created in the current directory.
+> - If no -l supplied it will look for a crc.json and crc2.json in the current directory
 
 ```bash
-crcutil diff -l 'C:\crc_1.json' 'C:\crc_2.json' -o 'C:\diff.json'
+crcutil diff -l 'C:\crc1.json' 'C:\crc2.json' -o 'C:\diff.json'
 ```
 ---
 
