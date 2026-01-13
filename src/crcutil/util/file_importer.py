@@ -11,7 +11,6 @@ import ctypes.wintypes
 import json
 import os
 import platform
-import syslog
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
@@ -180,10 +179,9 @@ class FileImporter(Static):
             BootstrapError: If unable to setup config/logging module
             OSError: If OS other than Windows/Linux detected
         """
+        system = platform.system()
+        home_folder = Path()
         try:
-            home_folder = Path()
-            system = platform.system()
-
             if system == "Windows":
                 csidl_personal = 5
                 shgfp_type_current = 0
@@ -243,14 +241,16 @@ class FileImporter(Static):
 
         except Exception as e:
             description = e.args[0] if e.args and len(e.args) >= 0 else ""
-            if platform.system == "Windows":
+            if system == "Windows":
                 win32evtlogutil.ReportEvent(  # pyright: ignore # noqa: PGH003
                     "plexutil",
                     eventID=1,
                     eventType=win32evtlog.EVENTLOG_ERROR_TYPE,  # pyright: ignore # noqa: PGH003
                     strings=[description],
                 )
-            elif platform.system() == "Linux":
+            elif system == "Linux":
+                import syslog  # noqa: PLC0415
+
                 syslog.syslog(syslog.LOG_ERR, f"[CRCUTIL]: {description}")
 
             if e.args and len(e.args) >= 0:
