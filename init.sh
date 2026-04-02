@@ -1,7 +1,9 @@
 #!/bin/bash
 
 color_red=$(tput setaf 1)
+# shellcheck disable=SC2034
 color_green=$(tput setaf 2)
+# shellcheck disable=SC2034
 color_yellow=$(tput setaf 3)
 color_normal=$(tput sgr0)
 setopt aliases

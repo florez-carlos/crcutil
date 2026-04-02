@@ -25,6 +25,13 @@ class KeyboardMonitorFactory(Static):
             )
 
             return KeyboardMonitorWindows()
+
+        elif system == "Darwin":
+            from crcutil.core.keyboard_monitor_darwin import (  # noqa:PLC0415
+                KeyboardMonitorDarwin,
+            )
+
+            return KeyboardMonitorDarwin()
         elif system == "Linux":
             session = os.getenv("XDG_SESSION_TYPE") or ""
 

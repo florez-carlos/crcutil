@@ -1,4 +1,4 @@
 #!/bin/bash
-shellcheck source.init.sh
+shellcheck init.sh
 ruff check --fix
 ruff format

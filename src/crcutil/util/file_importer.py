@@ -9,7 +9,6 @@ if TYPE_CHECKING:
 
 import ctypes.wintypes
 import json
-import os
 import platform
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -195,7 +194,9 @@ class FileImporter(Static):
                     description = "Could not locate Documents folder"
                     raise FileNotFoundError(description)  # noqa: TRY301
             elif system == "Linux":
-                home_folder = os.getenv("HOME") or ""
+                home_folder = Path.home() / ".local/state"
+            elif system == "Darwin":
+                home_folder = Path.home() / "Library/Application Support"
             else:
                 description = f"Unsupported OS: {system}"
                 raise OSError(description)  # noqa: TRY301

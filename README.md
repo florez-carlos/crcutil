@@ -8,11 +8,12 @@ Portable CRC32 Checksum Tool – Generate & Compare
 ![CLI](https://img.shields.io/badge/Interface-CLI-important)
 
 > [!NOTE]
-> Installation is supported only for the following: 
+> Installation is supported for the following: 
 > - Windows (amd64)
 > - Linux (amd64)
 >    - X11
 >    - Wayland
+> - MacOS (arm64)
 
 
 ## Table of Contents
@@ -40,6 +41,15 @@ pip install crcutil
 pip install crcutil
 sudo usermod -aG input $USER
 sudo pkill -u $USER
+```
+
+### MacOS
+> [!NOTE]
+> - Enable Accesibility Access for the Terminal on System Settings > Privacy & Security > Accessibility
+> - This makes it possible in MacOS to track keyboard presses; necessary for the playback controls
+
+```bash
+pip install crcutil
 ```
 
 ## Usage
@@ -90,11 +100,6 @@ crcutil diff -l 'C:\crc1.json' 'C:\crc2.json' -o 'C:\diff.json'
 
 ## Development
 
-> [!NOTE]
-> Development requires a fully configured [Dotfiles](https://github.com/florez-carlos/dotfiles) dev environment <br>
-
 ```bash
 source init.sh
 ```
-
-

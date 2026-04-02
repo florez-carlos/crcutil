@@ -182,9 +182,7 @@ class ChecksumManager:
                 description = f"Playback controls disabled: {e}"
                 CrcutilLogger.get_console_logger().warning(description)
 
-            length = (
-                total_count if total_count else len(str_relative_locations)
-            )
+            length = total_count or len(str_relative_locations)
             with alive_bar(length, dual_line=True) as bar:
                 if total_count:
                     offset_count = total_count - len(str_relative_locations)
