@@ -30,7 +30,7 @@ dependencies = [
   "pynput==1.8.1",
   "python-xlib==0.33",
   "evdev==1.9.2;sys_platform == 'linux'",
-  "pyobjc-framework-AppKit==12.1;sys_platform == 'darwin'",
+  "pyobjc-framework-Cocoa==12.1;sys_platform == 'darwin'",
 ]
 
 [project.scripts]
