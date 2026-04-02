@@ -23,6 +23,7 @@ Portable CRC32 Checksum Tool – Generate & Compare
   * [crc](#crc)
   * [diff](#diff)
   * [pause/resume](#pauseresume)
+* [Logs](#logs)
 * [Development](#development)
 
 ## Installation
@@ -89,16 +90,29 @@ crcutil diff -l 'C:\crc1.json' 'C:\crc2.json' -o 'C:\diff.json'
     - p
         - Windows
         - Linux (X11)
+        - MacOS
     - alt+p
         - Linux (Wayland)
 - The tool can be exited at any time by pressing:
     - q
         - Windows
         - Linux (X11)
+        - MacOS
     - alt+q
         - Linux (Wayland)
 
+## Logs
+
+> [!NOTE]
+> Logs can be found in:
+> - Windows -> C:\Users\User\Documents\crcutil\log
+> - Linux -> $XDG_STATE_HOME/crcutil/log
+> - MacOS -> /Library/Application Support/crcutil/log
+
 ## Development
+
+> [!NOTE]
+> Only Ubuntu environments supported
 
 ```bash
 source init.sh
