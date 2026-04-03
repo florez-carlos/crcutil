@@ -107,7 +107,7 @@ crcutil diff -l 'C:\crc1.json' 'C:\crc2.json' -o 'C:\diff.json'
 > Logs can be found in:
 > - Windows -> C:\Users\User\Documents\crcutil\log
 > - Linux -> $XDG_STATE_HOME/crcutil/log
-> - MacOS -> /Library/Application Support/crcutil/log
+> - MacOS -> ~/Library/Application Support/crcutil/log
 
 ## Development
 
