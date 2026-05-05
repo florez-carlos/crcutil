@@ -121,6 +121,6 @@ source init.sh
 
 ## Known Issues
 
-Playback controls on remote graphical sessions (NX, VNC, RDP, etc...) are not currently supported.
+- Playback controls on remote graphical sessions (NX, VNC, RDP, etc...) are not currently supported.
 
 
