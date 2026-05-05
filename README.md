@@ -25,6 +25,7 @@ Portable CRC32 Checksum Tool – Generate & Compare
   * [pause/resume](#pauseresume)
 * [Logs](#logs)
 * [Development](#development)
+* [Known Issues](#known-issues)
 
 ## Installation
 > [!NOTE]
@@ -113,6 +114,10 @@ crcutil diff -l 'C:\crc1.json' 'C:\crc2.json' -o 'C:\diff.json'
 
 > [!NOTE]
 > Only Ubuntu environments supported
+
+## Know Issues
+
+Playback controls on remote graphical sessions (NX, VNC, RDP, etc...) are not currently supported.
 
 ```bash
 source init.sh

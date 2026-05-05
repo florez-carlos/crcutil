@@ -27,15 +27,50 @@ class KeyboardMonitorFactory(Static):
             return KeyboardMonitorWindows()
 
         elif system == "Darwin":
+            import ctypes  # noqa:PLC0415
+
+            app_services = ctypes.cdll.LoadLibrary(
+                "/System/Library/Frameworks/ApplicationServices.framework/ApplicationServices"
+            )
+            accesibility_access = app_services.AXIsProcessTrusted() == 1
+            if not accesibility_access:
+                description = (
+                    "Terminal does not have accesibility access. "
+                    "To enable playback controls on MacOS: "
+                    "https://github.com/florez-carlos/"
+                    "crcutil#macos"
+                )
+                raise DeviceError(description)
+
             from crcutil.core.keyboard_monitor_darwin import (  # noqa:PLC0415
                 KeyboardMonitorDarwin,
             )
 
             return KeyboardMonitorDarwin()
         elif system == "Linux":
+            import getpass  # noqa:PLC0415
+            import grp  # noqa:PLC0415
+            import pwd  # noqa:PLC0415
+
             session = os.getenv("XDG_SESSION_TYPE") or ""
 
             if session.startswith("wayland"):
+                username = getpass.getuser()
+                user = pwd.getpwnam(username)
+                groups = [
+                    g.gr_name
+                    for g in grp.getgrall()
+                    if username in g.gr_mem or g.gr_gid == user.pw_gid
+                ]
+                if "input" not in groups:
+                    description = (
+                        "user not assigned to input group. "
+                        "To enable playback controls on wayland: "
+                        "https://github.com/florez-carlos/"
+                        "crcutil#linux-wayland"
+                    )
+                    raise DeviceError(description)
+
                 from crcutil.core.keyboard_monitor_wayland import (  # noqa:PLC0415
                     KeyboardMonitorWayland,
                 )
