@@ -115,10 +115,12 @@ crcutil diff -l 'C:\crc1.json' 'C:\crc2.json' -o 'C:\diff.json'
 > [!NOTE]
 > Only Ubuntu environments supported
 
+```bash
+source init.sh
+```
+
 ## Known Issues
 
 Playback controls on remote graphical sessions (NX, VNC, RDP, etc...) are not currently supported.
 
-```bash
-source init.sh
-```
+
