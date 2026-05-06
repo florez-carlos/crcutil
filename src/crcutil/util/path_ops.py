@@ -11,6 +11,7 @@ from crcutil.util.crcutil_logger import CrcutilLogger
 from crcutil.util.static import Static
 
 WIN_PERMISSION_ERROR = 5
+PATH_TRUNCATE_THRESHOLD = 3
 
 
 class PathOps(Static):
@@ -37,12 +38,18 @@ class PathOps(Static):
         )
         items = []
         try:
+            if path.is_symlink():
+                description = f"{PathOps.WARNING} Ignoring symlink: {path!s}"
+                if not supress_warnings:
+                    CrcutilLogger.get_console_logger().warning(description)
+                return items
+
             if path.is_file():
                 items.append(path)
             elif path.is_dir():
                 items.append(path)
                 for child in path.iterdir():
-                    sub_items = PathOps.walk(child)
+                    sub_items = PathOps.walk(child, supress_warnings)
                     items.extend(sub_items)
 
         except PermissionError:
@@ -61,6 +68,31 @@ class PathOps(Static):
                     CrcutilLogger.get_console_logger().warning(description)
                 debug = "POSIX permission denied"
                 CrcutilLogger.get_logger().debug(debug)
+            elif e.errno == errno.ENAMETOOLONG:
+                parts = path.parts
+                truncated_path_str = ""
+
+                if len(parts) == 1:
+                    truncated_path_str = "".join([parts[0]])
+                elif len(parts) == 2:  # noqa: PLR2004
+                    truncated_path_str = "".join([parts[0], parts[1]])
+                elif len(parts) == 3:  # noqa: PLR2004
+                    truncated_path_str = "".join(
+                        [parts[0], parts[1], parts[2]]
+                    )
+                elif len(parts) > 3:  # noqa: PLR2004
+                    truncated_path_str = "".join(
+                        [parts[0], parts[1], "...", parts[-1]]
+                    )
+                description = (
+                    f"{PathOps.WARNING} Path too long to evaluate: "
+                    f"{truncated_path_str}"
+                )
+                debug = f"Path too long to evaluate: {truncated_path_str}"
+                CrcutilLogger.get_logger().debug(debug)
+
+                if not supress_warnings:
+                    CrcutilLogger.get_console_logger().warning(description)
             else:
                 description = (
                     f"{PathOps.WARNING} Unexpected error, "
