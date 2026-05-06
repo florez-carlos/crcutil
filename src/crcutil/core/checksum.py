@@ -181,6 +181,7 @@ class Checksum:
             sample = f.read(8192)
 
         # Empty file, treat as empty text
+        # Does not enter here if file not in text_extensions
         if not sample and extension in text_extensions:
             return True
 
@@ -199,5 +200,7 @@ class Checksum:
             if ascii_lower_range <= byte <= ascii_upper_range
             or byte in (tab, line_feed, carriage_return)
         )
-        printable_character_treshold = 0.8
-        return (printable_count / len(sample)) > printable_character_treshold
+        printable_character_threshold = 0.8
+        if printable_count <= 0:
+            return False
+        return (printable_count / len(sample)) > printable_character_threshold
