@@ -11,7 +11,6 @@ from crcutil.util.crcutil_logger import CrcutilLogger
 from crcutil.util.static import Static
 
 WIN_PERMISSION_ERROR = 5
-PATH_TRUNCATE_THRESHOLD = 3
 
 
 class PathOps(Static):
