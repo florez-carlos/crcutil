@@ -31,6 +31,7 @@ dependencies = [
   "python-xlib==0.33",
   "evdev==1.9.2;sys_platform == 'linux'",
   "pyobjc-framework-Cocoa==12.1;sys_platform == 'darwin'",
+  "msgspec==0.21.1",
 ]
 
 [project.scripts]

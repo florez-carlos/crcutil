@@ -9,11 +9,11 @@ if TYPE_CHECKING:
 
 
 import ctypes.wintypes
-import json
 import platform
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+import msgspec
 import toml
 
 from crcutil.dto.bootstrap_paths_dto import BootstrapPathsDTO
@@ -30,6 +30,9 @@ if platform.system() == "Windows":
 import yaml
 
 from crcutil.util.static import Static
+
+JSON_ENCODER = msgspec.json.Encoder()
+JSON_DECODER = msgspec.json.Decoder(dict[str, int])
 
 
 class FileImporter(Static):
@@ -144,11 +147,12 @@ class FileImporter(Static):
         Returns:
             None: This method does not return a value.
         """
-        with crc_path.open(
-            "w", errors="strict", encoding=FileImporter.encoding
-        ) as file:
+        with crc_path.open("wb") as file:
             crc_data = ChecksumSerializer.to_json(checksum_dto)
-            json.dump(crc_data, file, indent=4, ensure_ascii=False)
+            encoded = msgspec.json.format(
+                JSON_ENCODER.encode(crc_data), indent=4
+            )
+            file.write(encoded)
 
     @staticmethod
     def save_crc_diff_report(
@@ -164,11 +168,12 @@ class FileImporter(Static):
         Returns:
             None: This method does not return a value.
         """
-        with report_path.open(
-            "w", errors="strict", encoding=FileImporter.encoding
-        ) as file:
+        with report_path.open("wb") as file:
             crc_data = CrcDiffReportSerializer.to_json(crc_diff_report_dto)
-            json.dump(crc_data, file, indent=4, ensure_ascii=False)
+            encoded = msgspec.json.format(
+                JSON_ENCODER.encode(crc_data), indent=4
+            )
+            file.write(encoded)
 
     @staticmethod
     def get_checksums(crc_path: Path) -> list[ChecksumDTO]:
@@ -181,10 +186,9 @@ class FileImporter(Static):
         Returns:
             list[ChecksumDTO]: Checksums loaded from the CRC file
         """
-        with crc_path.open(
-            "r", errors="strict", encoding=FileImporter.encoding
-        ) as file:
-            return ChecksumSerializer.to_dto(json.load(file))
+        with crc_path.open("rb") as file:
+            data = JSON_DECODER.decode(file.read())
+            return ChecksumSerializer.to_dto(data)
 
     @staticmethod
     def bootstrap() -> BootstrapPathsDTO:
