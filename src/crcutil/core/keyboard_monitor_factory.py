@@ -8,7 +8,7 @@ from crcutil.util.static import Static
 
 class KeyboardMonitorFactory(Static):
     @staticmethod
-    def get() -> KeyboardMonitor:
+    def get(is_fast: bool = False) -> KeyboardMonitor:
         """
         Gets a KeyboardMonitor compatible with the current system/session
 
@@ -17,6 +17,10 @@ class KeyboardMonitorFactory(Static):
         Raises:
             DeviceError: If not a graphical session or system not Windows/Linux
         """
+
+        if is_fast:
+            description = "User requested faster process (-f)"
+            raise DeviceError(description)
         system = platform.system()
 
         if system == "Windows":

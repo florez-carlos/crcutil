@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import argparse
+import platform
 import sys
 from argparse import RawTextHelpFormatter
-from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
 from crcutil.dto.user_instructions_dto import UserInstructionsDTO
@@ -14,6 +14,7 @@ from crcutil.exception.unexpected_argument_error import (
 from crcutil.exception.user_error import UserError
 from crcutil.util.crcutil_logger import CrcutilLogger
 from crcutil.util.file_importer import FileImporter
+from crcutil.util.icons import Icons
 from crcutil.util.static import Static
 
 EXPECTED_LOCATION_LENGHT_CRC = 1
@@ -71,6 +72,13 @@ class Prompt(Static):
         )
 
         parser.add_argument(
+            "-f",
+            "--fast",
+            action="store_true",
+            help=("Disables Playback Controls in order to complete faster"),
+        )
+
+        parser.add_argument(
             "-v",
             "--version",
             action="store_true",
@@ -83,17 +91,10 @@ class Prompt(Static):
             raise UnexpectedArgumentError(unknown)
 
         is_version = args.version
+        is_fast = args.fast
 
         if is_version:
-            crcutil_version = ""
-
-            try:
-                crcutil_version = version("crcutil")
-
-            except PackageNotFoundError:
-                pyproject = FileImporter.get_pyproject()
-                crcutil_version = pyproject["project"]["version"]
-
+            crcutil_version = FileImporter.get_project_version()
             CrcutilLogger.get_logger().info(crcutil_version)
             sys.exit(0)
 
@@ -174,11 +175,16 @@ class Prompt(Static):
                     )
                     raise UserError(description)
 
+        system = platform.system()
+
         debug = (
-            "Received a User Request:\n"
+            f"\n{Icons.BANNER_LEFT}BEGIN{Icons.BANNER_RIGHT}\n"
+            f"Version: {FileImporter.get_project_version()}\n"
             f"Request: {request.value if request else None}\n"
             f"Location: {location!s}\n"
             f"Output: {output!s}\n"
+            f"System: {system!s}\n"
+            f"Is Fast: {is_fast!s}"
         )
         CrcutilLogger.get_logger().debug(debug)
 
@@ -187,6 +193,7 @@ class Prompt(Static):
             location=location_1,
             crc_diff_files=crc_diff_files,
             output=output,
+            is_fast=is_fast,
         )
 
     @staticmethod

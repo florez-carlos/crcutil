@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from importlib.metadata import PackageNotFoundError, version
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -108,6 +109,26 @@ class FileImporter(Static):
         return toml.load(
             FileImporter.get_project_root().parent / "pyproject.toml"
         )
+
+    @staticmethod
+    def get_project_version() -> str:
+        """
+        Gets the project's semantic version
+        or *UNKNOWN VERSION* if failure to determine
+
+        Returns:
+            str: The project's semantic version
+        """
+        try:
+            crcutil_version = version("crcutil")
+
+        except PackageNotFoundError:
+            pyproject = FileImporter.get_pyproject()
+            crcutil_version = (
+                pyproject["project"]["version"] or "*UNKNOWN VERSION*"
+            )
+
+        return crcutil_version
 
     @staticmethod
     def save_checksums(

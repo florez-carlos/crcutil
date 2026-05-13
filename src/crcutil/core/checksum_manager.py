@@ -17,6 +17,7 @@ from crcutil.exception.corrupt_crc_error import CorruptCrcError
 from crcutil.exception.device_error import DeviceError
 from crcutil.util.crcutil_logger import CrcutilLogger
 from crcutil.util.file_importer import FileImporter
+from crcutil.util.icons import Icons
 from crcutil.util.path_ops import PathOps
 
 
@@ -26,12 +27,14 @@ class ChecksumManager:
         location: Path,
         crc_file_location: Path,
         user_request: UserRequest,
+        is_fast: bool,
         checksums_diff_1: list[ChecksumDTO],
         checksums_diff_2: list[ChecksumDTO],
     ) -> None:
         self.location = location
         self.crc_file_location = crc_file_location
         self.user_request = user_request
+        self.is_fast = is_fast
         self.checksums_diff_1 = checksums_diff_1
         self.checksums_diff_2 = checksums_diff_2
 
@@ -166,8 +169,15 @@ class ChecksumManager:
                 else (">", "||", "X")
             )
 
+            description = (
+                f"\n{Icons.BANNER_LEFT}CRCutil "
+                f"{FileImporter.get_project_version()}"
+                f"{Icons.BANNER_RIGHT}"
+            )
+            CrcutilLogger.get_console_logger().info(description)
+
             try:
-                monitor = KeyboardMonitorFactory.get()
+                monitor = KeyboardMonitorFactory.get(is_fast=self.is_fast)
 
                 CrcutilLogger.get_console_logger().info(
                     monitor.get_pause_message()
@@ -179,7 +189,9 @@ class ChecksumManager:
                 monitor.start()
 
             except DeviceError as e:
-                description = f"Playback controls disabled: {e}"
+                description = (
+                    f"\n{Icons.WARNING}Playback controls disabled: {e}"
+                )
                 CrcutilLogger.get_console_logger().warning(description)
 
             length = total_count or len(str_relative_locations)
@@ -201,9 +213,8 @@ class ChecksumManager:
                     try:
                         future = checksum.get_future()
                         while True:
-                            sleep(0.3)
-
-                            if monitor is not None:
+                            if monitor is not None and not self.is_fast:
+                                sleep(0.2)
                                 if monitor.is_listen_quit():
                                     CrcutilLogger.get_console_logger().info(
                                         f"{cancel_icon} Quitting..."
@@ -213,11 +224,9 @@ class ChecksumManager:
                                 if monitor.is_listen_paused():
                                     bar.text = f"{pause_icon} PAUSED"
                                     continue
-
-                                if not monitor.is_listen_paused():
-                                    bar.text = (
-                                        f"{play_icon} {str_relative_location}"
-                                    )
+                                bar.text = (
+                                    f"{play_icon} {str_relative_location}"
+                                )
                             else:
                                 bar.text = f"{str_relative_location}"
 

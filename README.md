@@ -1,4 +1,4 @@
-# CRCUtil
+# CRCutil
 Portable CRC32 Checksum Tool – Generate & Compare
 
 ![PyPI Version](https://img.shields.io/pypi/v/crcutil)
@@ -66,6 +66,12 @@ Generate CRC32 checksums
 ```bash
 crcutil crc -l 'C:\path_to_traverse' -o 'C:\path_to_output.json'
 ```
+
+> [!TIP]
+> - Make CRCutil run faster by disabling playback controls -f
+```bash
+crcutil crc -f -l 'C:\path_to_traverse'
+```
 -----
 ### diff
 Diff output can be generated from 2 separate crc files
@@ -123,4 +129,5 @@ source init.sh
 
 - Playback controls on remote graphical sessions (NX, VNC, RDP, etc...) are not currently supported.
 
-
+# License
+[GNU GPLv3](https://github.com/florez-carlos/crcutil/blob/main/LICENSE)

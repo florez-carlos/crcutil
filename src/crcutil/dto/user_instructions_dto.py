@@ -16,3 +16,4 @@ class UserInstructionsDTO:
     location: Path
     crc_diff_files: list[Path]
     output: Path
+    is_fast: bool

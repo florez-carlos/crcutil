@@ -29,6 +29,7 @@ def main() -> None:
         instructions_dto = Prompt.get_user_instructions_dto()
         location = instructions_dto.location
         user_request = instructions_dto.request
+        is_fast = instructions_dto.is_fast
         crc_diff_files = instructions_dto.crc_diff_files
         checksums_diffs = []
         if crc_diff_files:
@@ -45,6 +46,7 @@ def main() -> None:
             location=location,
             crc_file_location=crc_file_location,
             user_request=user_request,
+            is_fast=is_fast,
             checksums_diff_1=checksums_diffs[0] if checksums_diffs else [],
             checksums_diff_2=checksums_diffs[1] if checksums_diffs else [],
         )
