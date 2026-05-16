@@ -1,14 +1,55 @@
+import codecs
 import concurrent.futures
 import zlib
 from collections.abc import Callable
 from pathlib import Path
+from typing import ClassVar
 
 from crcutil.util.crcutil_logger import CrcutilLogger
 
-CHUNK_SIZE = 4096 * 1024
-
 
 class Checksum:
+    CHUNK_SIZE = 4096 * 1024
+
+    TEXT_EXTENSIONS: ClassVar[set[str]] = {
+        ".txt",
+        ".md",
+        ".rst",
+        ".html",
+        ".htm",
+        ".xml",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".csv",
+        ".tsv",
+        ".ini",
+        ".cfg",
+        ".conf",
+        ".py",
+        ".js",
+        ".java",
+        ".c",
+        ".cpp",
+        ".h",
+        ".hpp",
+        ".php",
+        ".rb",
+        ".go",
+        ".rs",
+        ".ts",
+        ".css",
+        ".scss",
+        ".sql",
+        ".sh",
+        ".bash",
+        ".zsh",
+        ".ps1",
+        ".bat",
+        ".cmd",
+        ".log",
+    }
+
     def __init__(self, location: Path, root_location: Path) -> None:
         self.location = location
         self.root_location = root_location
@@ -46,31 +87,19 @@ class Checksum:
         Returns:
             Checksum calculated from the attributes of self.location.
         """
-        checksum = 0
-        checksum = (
-            zlib.crc32(
-                self.__get_checksum_from_path(
-                    self.location, self.root_location
-                ),
-                checksum,
-            )
-            & 0xFFFFFFFF
+        checksum = self.__get_checksum_from_path(
+            self.location, self.root_location
         )
 
         if self.location.is_file():
-            checksum = (
-                zlib.crc32(
-                    self.__get_checksum_from_file_contents(self.location),
-                    checksum,
-                )
-                & 0xFFFFFFFF
+            checksum = self.__get_checksum_from_file_contents(
+                self.location, checksum
             )
-
         return checksum
 
     def __get_checksum_from_path(
         self, location: Path, root_location: Path
-    ) -> bytes:
+    ) -> int:
         """
         Helper method to __get_checksum().
 
@@ -79,19 +108,26 @@ class Checksum:
             root_location (pathlib.Path): The root path of location
 
         Returns:
-            bytes: str representation of location
+            int: CRC32 checksum from the str representation of location
                    relative to the root location.
 
             Example:
             - root_location: a
             - location: a/b/c
-            Returns -> b'b/c'
+            Returns -> checksum from b'b/c'
         """
-        return str(location.relative_to(root_location).as_posix()).encode(
-            "utf-8"
+        return (
+            zlib.crc32(
+                str(location.relative_to(root_location).as_posix()).encode(
+                    "utf-8"
+                )
+            )
+            & 0xFFFFFFFF
         )
 
-    def __get_checksum_from_file_contents(self, location: Path) -> bytes:
+    def __get_checksum_from_file_contents(
+        self, location: Path, initial: int = 0
+    ) -> int:
         """
         Helper method to __get_checksum()
         Returns bytes from the str representation
@@ -107,86 +143,66 @@ class Checksum:
             location (pathlib.Path): The path to evaluate
 
         Returns:
-            bytes: 4-byte little-endian representation of the CRC32 checksum
+            int: CRC32 checksum
         """
-        file_checksum = 0
-        is_text_file = self.__is_likely_text_file(location)
-
-        if is_text_file:
-            try:
-                with location.open("r", encoding="utf-8") as f:
-                    content = f.read().replace("\r\n", "\n")
-                content_bytes = content.encode("utf-8")
-                file_checksum = zlib.crc32(content_bytes) & 0xFFFFFFFF
-                return file_checksum.to_bytes(4, "little", signed=False)
-            except UnicodeDecodeError:
-                description = (
-                    f"Understood as text file: {location!s} "
-                    "but encountered decoding error. Proceeding w/ binary"
-                )
-                CrcutilLogger.get_logger().debug(description)
-
+        file_checksum = initial
         with location.open("rb") as f:
-            for chunk in iter(lambda: f.read(CHUNK_SIZE), b""):
+            sample = f.read(8192)
+            is_text = self.__is_likely_text_file(
+                sample, location.suffix.lower()
+            )
+
+            if is_text:
+                try:
+                    f.seek(0)
+                    decoder = codecs.getincrementaldecoder("utf-8")()
+                    leftover = b""
+
+                    for chunk in iter(lambda: f.read(self.CHUNK_SIZE), b""):
+                        data = leftover + chunk
+                        leftover = data[-1:]
+                        data = data[:-1]
+                        text = decoder.decode(data)
+                        text = text.replace("\r\n", "\n")
+                        file_checksum = (
+                            zlib.crc32(text.encode("utf-8"), file_checksum)
+                            & 0xFFFFFFFF
+                        )
+
+                    tail = decoder.decode(leftover, final=True)
+                    tail = tail.replace("\r\n", "\n")
+                    return (
+                        zlib.crc32(tail.encode("utf-8"), file_checksum)
+                        & 0xFFFFFFFF
+                    )
+
+                except UnicodeDecodeError:
+                    description = (
+                        f"Understood as text file: {location!s} "
+                        "but encountered decoding error. Proceeding w/ binary"
+                    )
+                    CrcutilLogger.get_logger().debug(description)
+                    file_checksum = initial
+                    f.seek(0)
+            else:
+                f.seek(0)
+
+            for chunk in iter(lambda: f.read(self.CHUNK_SIZE), b""):
                 file_checksum = zlib.crc32(chunk, file_checksum) & 0xFFFFFFFF
 
-        return file_checksum.to_bytes(4, "little", signed=False)
+            return file_checksum
 
-    def __is_likely_text_file(self, location: Path) -> bool:
+    def __is_likely_text_file(self, sample: bytes, extension: str) -> bool:
         """
         Check if a file is likely to be text by sampling the beginning.
         """
-        # Known text extensions to consider for line ending normalization
-        text_extensions = {
-            ".txt",
-            ".md",
-            ".rst",
-            ".html",
-            ".htm",
-            ".xml",
-            ".json",
-            ".yaml",
-            ".yml",
-            ".csv",
-            ".tsv",
-            ".ini",
-            ".cfg",
-            ".conf",
-            ".py",
-            ".js",
-            ".java",
-            ".c",
-            ".cpp",
-            ".h",
-            ".hpp",
-            ".php",
-            ".rb",
-            ".go",
-            ".rs",
-            ".ts",
-            ".css",
-            ".scss",
-            ".sql",
-            ".sh",
-            ".bash",
-            ".zsh",
-            ".ps1",
-            ".bat",
-            ".cmd",
-            ".log",
-        }
-        extension = location.suffix.lower()
-        # Only read a sample
-        with location.open("rb") as f:
-            sample = f.read(8192)
-
         # Empty file, treat as empty text
         # Does not enter here if file not in text_extensions
-        if not sample and extension in text_extensions:
+        if not sample and extension in self.TEXT_EXTENSIONS:
             return True
 
         # Null byte presence, likely a binary file
-        if b"\0" in sample and extension not in text_extensions:
+        if b"\0" in sample and extension not in self.TEXT_EXTENSIONS:
             return False
 
         ascii_lower_range = 32
