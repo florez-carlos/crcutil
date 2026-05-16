@@ -153,7 +153,7 @@ class ChecksumManager:
         checksums = [
             ChecksumDTO(file=x, crc=0) for x in str_relative_locations
         ]
-        FileImporter.save_checksums(self.crc_file_location, checksums)
+        FileImporter.stage_checksums(self.crc_file_location, checksums)
 
     def __write_crc(
         self,
@@ -163,12 +163,6 @@ class ChecksumManager:
     ) -> None:
         monitor = None
         try:
-            play_icon, pause_icon, cancel_icon = (
-                ("▶", "⏸", "✖")
-                if sys.stdout.encoding.lower().startswith("utf")
-                else (">", "||", "X")
-            )
-
             description = (
                 f"\n{Icons.BANNER_LEFT}CRCutil "
                 f"{FileImporter.get_project_version()}"
@@ -194,61 +188,63 @@ class ChecksumManager:
                 )
                 CrcutilLogger.get_console_logger().warning(description)
 
+            offset_dict = FileImporter.get_checksum_offset(
+                crc_path=self.crc_file_location
+            )
+
             length = total_count or len(str_relative_locations)
-            with alive_bar(length, dual_line=True) as bar:
+
+            with (
+                self.crc_file_location.open("r+b") as file,  # Stream crc file
+                alive_bar(length, dual_line=True) as bar,  # Init progress bar
+            ):
+                # Draw completed checksums in the progress bar
                 if total_count:
                     offset_count = total_count - len(str_relative_locations)
                     for _ in range(offset_count):
                         bar()
 
                 for str_relative_location in str_relative_locations:
+                    # Checksum obj needs resolved absolute location
                     abs_location = (
                         root_location / Path(str_relative_location)
                     ).resolve()
-
                     checksum = Checksum(
                         location=abs_location, root_location=root_location
                     )
 
                     try:
                         future = checksum.get_future()
+                        # Initialize keyboard polling
                         while True:
                             if monitor is not None and not self.is_fast:
                                 sleep(0.2)
                                 if monitor.is_listen_quit():
                                     CrcutilLogger.get_console_logger().info(
-                                        f"{cancel_icon} Quitting..."
+                                        f"{Icons.QUIT} Quitting..."
                                     )
                                     sys.exit(0)
 
                                 if monitor.is_listen_paused():
-                                    bar.text = f"{pause_icon} PAUSED"
+                                    bar.text = f"{Icons.PAUSE} PAUSED"
                                     continue
                                 bar.text = (
-                                    f"{play_icon} {str_relative_location}"
+                                    f"{Icons.PLAY} {str_relative_location}"
                                 )
                             else:
                                 bar.text = f"{str_relative_location}"
+                                sleep(0.1)
 
                             if future.done():
-                                checksums = FileImporter.get_checksums(
-                                    self.crc_file_location
-                                )
-                                checksums.append(
-                                    ChecksumDTO(
-                                        file=str_relative_location,
-                                        crc=future.result(timeout=0.00),
-                                    )
-                                )
-                                FileImporter.save_checksums(
-                                    self.crc_file_location, checksums
-                                )
+                                offset = offset_dict[str_relative_location]
+                                value = future.result(timeout=0.00)
+                                file.seek(offset)
+                                file.write(f"{value:010}".encode())
+
                                 bar()
                                 break
-
                     finally:
                         checksum.shutdown()
-
         finally:
             if monitor:
                 monitor.stop()
