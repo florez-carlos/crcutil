@@ -27,3 +27,7 @@ class Icons(Static):
         "🟢" if sys.stdout.encoding.lower().startswith("utf") else "SUCCESS"
     )
     FAILURE = "🔴" if sys.stdout.encoding.lower().startswith("utf") else "FAIL"
+
+    PLAY = "▶" if sys.stdout.encoding.lower().startswith("utf") else ">"
+    PAUSE = "⏸" if sys.stdout.encoding.lower().startswith("utf") else "||"
+    QUIT = "✖" if sys.stdout.encoding.lower().startswith("utf") else "X"
