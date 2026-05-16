@@ -31,11 +31,10 @@ import yaml
 
 from crcutil.util.static import Static
 
-JSON_ENCODER = msgspec.json.Encoder()
-JSON_DECODER = msgspec.json.Decoder(dict[str, int])
-
 
 class FileImporter(Static):
+    JSON_ENCODER = msgspec.json.Encoder()
+    JSON_DECODER = msgspec.json.Decoder(dict[str, str])
     encoding = "utf-8"
 
     @staticmethod
@@ -134,7 +133,7 @@ class FileImporter(Static):
         return crcutil_version
 
     @staticmethod
-    def save_checksums(
+    def stage_checksums(
         crc_path: Path, checksum_dto: list[ChecksumDTO]
     ) -> None:
         """
@@ -150,9 +149,70 @@ class FileImporter(Static):
         with crc_path.open("wb") as file:
             crc_data = ChecksumSerializer.to_json(checksum_dto)
             encoded = msgspec.json.format(
-                JSON_ENCODER.encode(crc_data), indent=4
+                FileImporter.JSON_ENCODER.encode(crc_data), indent=4
             )
             file.write(encoded)
+
+    @staticmethod
+    def get_checksum_offset(crc_path: Path) -> dict[str, int]:
+        """
+        Returns a dict of Paths and the position of their
+        corresponding checksum in the crc file
+
+        Args:
+            crc_path (pathlib.Path): The crc file
+
+        Returns:
+            dict[str, int]: path and position of the checksum in the crc file
+        """
+
+        offset: dict[str, int] = {}
+
+        with crc_path.open("rb") as file:
+            # Tracks the byte offset of the start of the current line
+            pos = 0
+
+            # Read one line at a time.
+            # The walrus operator (:=) assigns and checks in one step
+            while line := file.readline():
+                # Removes leading/trailing whitespace,
+                # newline and trailing comma
+                stripped = line.strip().rstrip(b",")
+
+                # Skip lines that aren't key-value pairs (e.g. {, })
+                # pos is updated before skipping
+                # to stay accurate for the next line
+                if b'": ' not in stripped:
+                    pos = file.tell()
+                    continue
+
+                # Find the byte index of ":  within the stripped line
+                # This lands on the closing " of the key
+                # — e.g. for "file1": "0000000000",
+                # sep_idx points at the " after file1
+                sep = b'": '
+                sep_idx = stripped.index(sep)
+
+                # Slice out just the key.
+                # stripped[:sep_idx] would be "file1 (missing closing quote)
+                # +1 includes that closing ", giving us "file1"
+                path_bytes = stripped[: sep_idx + 1]
+
+                try:
+                    path = msgspec.json.decode(path_bytes.strip())
+                except msgspec.DecodeError:
+                    pos = file.tell()
+                    continue
+
+                # Find where the value "0000000000" starts within the raw line
+                # Value begins after the key + `: "`
+                value_start_in_line = line.index(b'": ') + len(b'": "')
+                idx = pos + value_start_in_line
+
+                pos = file.tell()
+                offset[path] = idx
+
+        return offset
 
     @staticmethod
     def save_crc_diff_report(
@@ -171,7 +231,7 @@ class FileImporter(Static):
         with report_path.open("wb") as file:
             crc_data = CrcDiffReportSerializer.to_json(crc_diff_report_dto)
             encoded = msgspec.json.format(
-                JSON_ENCODER.encode(crc_data), indent=4
+                FileImporter.JSON_ENCODER.encode(crc_data), indent=4
             )
             file.write(encoded)
 
@@ -187,7 +247,7 @@ class FileImporter(Static):
             list[ChecksumDTO]: Checksums loaded from the CRC file
         """
         with crc_path.open("rb") as file:
-            data = JSON_DECODER.decode(file.read())
+            data = FileImporter.JSON_DECODER.decode(file.read())
             return ChecksumSerializer.to_dto(data)
 
     @staticmethod
