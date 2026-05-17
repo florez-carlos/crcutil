@@ -11,6 +11,7 @@ from crcutil.exception.unexpected_argument_error import UnexpectedArgumentError
 from crcutil.exception.user_error import UserError
 from crcutil.util.crcutil_logger import CrcutilLogger
 from crcutil.util.file_importer import FileImporter
+from crcutil.util.icons import Icons
 
 
 def main() -> None:
@@ -63,15 +64,18 @@ def main() -> None:
             description = "Successful System Exit"
             CrcutilLogger.get_logger().debug(description)
         else:
-            description = f"\n=====Unexpected Error=====\n{e!s}"
+            description = (
+                f"\n{Icons.BANNER_LEFT}Unexpected Error"
+                f"{Icons.BANNER_RIGHT}\n{e!s}"
+            )
             CrcutilLogger.get_logger().exception(description)
             raise
 
     except UnexpectedArgumentError as e:
         sys.tracebacklimit = 0
         description = (
-            "\n=====User Argument Error=====\n"
-            "These arguments are unrecognized: \n"
+            f"\n{Icons.BANNER_LEFT}User Argument Error{Icons.BANNER_RIGHT}\n"
+            f"These arguments are unrecognized: \n"
         )
         for argument in e.args[0]:
             description += "-> " + argument + "\n"
@@ -80,33 +84,41 @@ def main() -> None:
 
     except UserError as e:
         sys.tracebacklimit = 0
-        description = f"\n=====User Error=====\n{e!s}"
+        description = (
+            f"\n{Icons.BANNER_LEFT}User Error{Icons.BANNER_RIGHT}\n{e!s}"
+        )
         CrcutilLogger.get_logger().error(description)
 
-    except CorruptCrcError as e:
+    except (CorruptCrcError, json.decoder.JSONDecodeError) as e:
         sys.tracebacklimit = 0
-        description = f"\n=====Corrupt crc Error=====\n{e!s}"
-        CrcutilLogger.get_logger().error(description)
-
-    except json.decoder.JSONDecodeError as e:
-        sys.tracebacklimit = 0
-        description = f"\n=====Corrupt crc Error=====\n{e!s}"
+        description = (
+            f"\n{Icons.BANNER_LEFT}Corrupt crc Error"
+            f"{Icons.BANNER_RIGHT}\n{e!s}"
+        )
         CrcutilLogger.get_logger().error(description)
 
     except ValidationError as e:
         sys.tracebacklimit = 0
-        description = f"\n=====Invalid Schema Error=====\n{e!s}"
+        description = (
+            f"\n{Icons.BANNER_LEFT}Invalid Schema Error"
+            f"{Icons.BANNER_RIGHT}\n{e!s}"
+        )
         CrcutilLogger.get_logger().error(description)
 
     # No regular logger can be expected to be initialized
     except BootstrapError as e:
         sys.tracebacklimit = 0
-        description = f"\n=====Program Initialization Error=====\n{e!s}"
+        description = (
+            f"\n{Icons.BANNER_LEFT}Program Initialization Error"
+            f"{Icons.BANNER_RIGHT}\n{e!s}"
+        )
         e.args = (description,)
         raise
 
     except Exception as e:  # noqa: BLE001
-        description = f"\n=====Unexpected Error=====\n{e!s}"
+        description = (
+            f"\n{Icons.BANNER_LEFT}Unexpected Error{Icons.BANNER_RIGHT}\n{e!s}"
+        )
         CrcutilLogger.get_logger().exception(description)
 
 
