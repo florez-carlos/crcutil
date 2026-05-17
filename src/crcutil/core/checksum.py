@@ -50,10 +50,15 @@ class Checksum:
         ".log",
     }
 
-    def __init__(self, location: Path, root_location: Path) -> None:
+    def __init__(
+        self,
+        location: Path,
+        root_location: Path,
+        executor: concurrent.futures.ThreadPoolExecutor,
+    ) -> None:
         self.location = location
         self.root_location = root_location
-        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+        self.executor = executor
         self.future = None
 
     def get_future(
@@ -76,9 +81,6 @@ class Checksum:
             self.future.add_done_callback(lambda f: callback(f.result()))
 
         return self.future
-
-    def shutdown(self) -> None:
-        self.executor.shutdown(wait=False, cancel_futures=True)
 
     def __get_checksum(self) -> int:
         """

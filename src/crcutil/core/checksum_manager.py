@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import concurrent.futures
 import os
 import sys
 from pathlib import Path
@@ -204,16 +205,19 @@ class ChecksumManager:
                     for _ in range(offset_count):
                         bar()
 
-                for str_relative_location in str_relative_locations:
-                    # Checksum obj needs resolved absolute location
-                    abs_location = (
-                        root_location / Path(str_relative_location)
-                    ).resolve()
-                    checksum = Checksum(
-                        location=abs_location, root_location=root_location
-                    )
+                executor = concurrent.futures.ThreadPoolExecutor(max_workers=1)
+                try:
+                    for str_relative_location in str_relative_locations:
+                        # Checksum obj needs resolved absolute location
+                        abs_location = (
+                            root_location / Path(str_relative_location)
+                        ).resolve()
+                        checksum = Checksum(
+                            location=abs_location,
+                            root_location=root_location,
+                            executor=executor,
+                        )
 
-                    try:
                         future = checksum.get_future()
                         # Initialize keyboard polling
                         while True:
@@ -222,6 +226,9 @@ class ChecksumManager:
                                 if monitor.is_listen_quit():
                                     CrcutilLogger.get_console_logger().info(
                                         f"{Icons.QUIT} Quitting..."
+                                    )
+                                    executor.shutdown(
+                                        wait=False, cancel_futures=True
                                     )
                                     sys.exit(0)
 
@@ -243,8 +250,9 @@ class ChecksumManager:
 
                                 bar()
                                 break
-                    finally:
-                        checksum.shutdown()
+                finally:
+                    executor.shutdown(wait=False, cancel_futures=True)
+
         finally:
             if monitor:
                 monitor.stop()
