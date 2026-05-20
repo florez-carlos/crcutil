@@ -1,4 +1,20 @@
 #!/bin/bash
-shellcheck init.sh
-ruff check --fix
-ruff format
+
+color_red=$(tput setaf 1)
+color_normal=$(tput sgr0)
+
+shellcheck init.sh || exit 1
+ruff check --fix || exit 1
+ruff format || exit 1
+
+required=$(vermin --backport argparse --backport dataclasses --backport enum --backport typing --eval-annotations --no-parse-comments . | awk '/Minimum required/ {print $NF}')
+if [ -z "$required" ]; then
+    printf "%s\n" "${color_red}ERROR:${color_normal} vermin cannot detect required version"
+    exit 1
+fi
+current=$(grep 'requires-python' pyproject.toml | grep -oP '\d+\.\d+')
+
+if dpkg --compare-versions "$required" gt "$current"; then
+    printf "%s\n" "${color_red}ERROR:${color_normal} pyproject defines: ${current} but vermin says minimum: ${required}"
+    exit 1
+fi
