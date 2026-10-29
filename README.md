@@ -7,15 +7,6 @@ Portable CRC32 Checksum Tool – Generate & Compare
 ![PyPI Status](https://img.shields.io/pypi/status/crcutil)
 ![CLI](https://img.shields.io/badge/Interface-CLI-important)
 
-> [!NOTE]
-> Installation is supported for the following: 
-> - Windows (amd64)
-> - Linux (amd64)
->    - X11
->    - Wayland
-> - MacOS (arm64)
-
-
 ## Table of Contents
 
 * [Installation](#installation)
@@ -29,10 +20,11 @@ Portable CRC32 Checksum Tool – Generate & Compare
 
 ## Installation
 > [!NOTE]
-> - Requires Python 3.11+<br >
+> - Requires Python 3.12+<br >
+> - Requires pipx<br >
 ### Windows & Linux (X11)
 ```bash
-pip install crcutil
+pipx install crcutil
 ```
 
 ### Linux (Wayland)
@@ -40,7 +32,7 @@ pip install crcutil
 > - This will add your user to the <i>input</i> group and immediately log you out.
 > - This makes it possible in Wayland to track keyboard presses; necessary for the playback controls
 ```bash
-pip install crcutil
+pipx install crcutil
 sudo usermod -aG input $USER
 sudo pkill -u $USER
 ```
@@ -51,7 +43,7 @@ sudo pkill -u $USER
 > - This makes it possible in MacOS to track keyboard presses; necessary for the playback controls
 
 ```bash
-pip install crcutil
+pipx install crcutil
 ```
 
 ## Usage

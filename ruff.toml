@@ -30,6 +30,9 @@ ignore = ["D",
 "TRY300",
 "RET505",
 "RET506",
+"B008",
+"CPY001",
+"PLR0917",
 ]
 # select = ["E4", "E7", "E9", "F", "B", "Q"]
 # extend-select = ["E501"]

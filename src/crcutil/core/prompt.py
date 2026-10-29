@@ -28,8 +28,11 @@ class Prompt(Static):
 
     @staticmethod
     def get_user_instructions_dto() -> UserInstructionsDTO:
+        description_str = (
+            "crcutil\nPortable CRC32 Checksum Tool - Generate & Compare"
+        )
         parser = argparse.ArgumentParser(
-            description="crcutil", formatter_class=RawTextHelpFormatter
+            description=description_str, formatter_class=RawTextHelpFormatter
         )
 
         request_help_str = "Supported Requests: \n"
@@ -65,7 +68,7 @@ class Prompt(Static):
             type=Path,
             nargs="?",
             help=(
-                "Path to store the crc or diff file"
+                "Path to store the crc or diff file, "
                 "if none specified, then it's saved at the default location"
             ),
             default=None,
@@ -99,9 +102,12 @@ class Prompt(Static):
             sys.exit(0)
 
         request = args.request
+
         if not request:
-            description = "Expected a request but none supplied, see -h"
-            raise UserError(description)
+            msg = f"\n{description_str}\n\n{request_help_str}"
+            CrcutilLogger.get_console_logger().info(msg)
+            sys.exit(0)
+
         request = UserRequest.get_user_request_from_str(request)
 
         location = args.location

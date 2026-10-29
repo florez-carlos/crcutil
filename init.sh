@@ -8,9 +8,7 @@ color_yellow=$(tput setaf 3)
 color_normal=$(tput sgr0)
 setopt aliases
 
-
-required_python_version_path_name="3.12"
-required_python_version="3.12.10"
+required_python_version="3.13.17"
 
 if [ $UID -eq 0 ]; then
     printf "%s\n" "${color_red}ERROR:${color_normal}Please DO NOT run this script with sudo"
@@ -39,4 +37,5 @@ if [ "$VIRTUAL_ENV" != "$HOME"/venv/crcutil ]; then
 fi
 pip install -r requirements.txt
 
+required_python_version_path_name="${required_python_version%.*}"  # strips patch: 3.11.6 -> 3.11
 export PYTHONPATH=$VIRTUAL_ENV/lib/python"$required_python_version_path_name"/site-packages/
